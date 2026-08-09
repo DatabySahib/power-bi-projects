@@ -1,0 +1,93 @@
+table FactTransactions
+	lineageTag: 60b76a73-9695-4133-b0ce-d6720ce0d675
+
+	column CustomerID
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 47e87ef9-b6ce-4ee5-ae04-e5f45e78575d
+		summarizeBy: none
+		sourceColumn: CustomerID
+
+		annotation SummarizationSetBy = User
+
+	column OrderID
+		dataType: int64
+		formatString: 0
+		lineageTag: f7c1fb90-f1e0-4cd2-b4d2-493d97b6d2ca
+		summarizeBy: none
+		sourceColumn: OrderID
+
+		annotation SummarizationSetBy = User
+
+	column ProductInformation
+		dataType: string
+		lineageTag: 66d1de86-c748-4fc9-9f79-f96e490ce2ce
+		summarizeBy: none
+		sourceColumn: ProductInformation
+
+		annotation SummarizationSetBy = Automatic
+
+	column TransactionAmount
+		dataType: double
+		formatString: \$#,##0.00
+		lineageTag: 5b5ccb3f-9207-493e-b1fa-bf32406f0182
+		summarizeBy: sum
+		sourceColumn: TransactionAmount
+
+		annotation SummarizationSetBy = User
+
+	column PurchaseDate
+		dataType: dateTime
+		isHidden
+		formatString: yyyy-mm-dd
+		lineageTag: e66a2ca5-7b3e-4037-8cac-92a8252d2261
+		summarizeBy: none
+		sourceColumn: PurchaseDate
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Location
+		dataType: string
+		lineageTag: fa99f729-6ccf-489a-9cff-0833da2b4d34
+		summarizeBy: none
+		sourceColumn: Location
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactTransactions = m
+		mode: import
+		source =
+				let
+					// Change this single line if the CSV moves.
+					FilePath = "C:\Users\Zenbook\Desktop\Customer Lifetime Value Analysis\customer_data.csv",
+					Source = Csv.Document(
+						File.Contents(FilePath),
+						[Delimiter = ",", Columns = 6, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+					),
+					PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+					// The model carries sourceQueryCulture = tr-TR, so every conversion is pinned to
+					// en-US explicitly: otherwise "943.31" is read as 94331 and "4/11/2023" fails.
+					ChangedTypes = Table.TransformColumnTypes(
+						PromotedHeaders,
+						{
+							{"CustomerID", Int64.Type},
+							{"OrderID", Int64.Type},
+							{"ProductInformation", type text},
+							{"TransactionAmount", type number},
+							{"PurchaseDate", type date},
+							{"Location", type text}
+						},
+						"en-US"
+					),
+					RemovedBlankRows = Table.SelectRows(
+						ChangedTypes,
+						each [CustomerID] <> null and [OrderID] <> null and [PurchaseDate] <> null
+					)
+				in
+					RemovedBlankRows
+
+	annotation PBI_ResultType = Table
+

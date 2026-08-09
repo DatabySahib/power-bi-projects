@@ -1,0 +1,85 @@
+/// Fact table at order-line grain (2,155 rows). One row per product on an order; the model's revenue grain.
+table order_details
+	lineageTag: 1cbfc2e8-e678-480e-9a89-a0c9b8e220a6
+
+	/// Foreign key to orders[order_id].
+	column order_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 33034634-e901-477e-ae06-33a57f64673d
+		summarizeBy: none
+		sourceColumn: order_id
+
+		annotation SummarizationSetBy = User
+
+	/// Foreign key to products[product_id].
+	column product_id
+		dataType: int64
+		formatString: 0
+		lineageTag: a8282ae4-199f-4bdc-a502-91ffe256bd23
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = User
+
+	/// Price actually charged on this line at time of sale.
+	column unit_price
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: ae23ceba-17fd-4741-84a9-7b60c566c88c
+		summarizeBy: none
+		sourceColumn: unit_price
+
+		annotation SummarizationSetBy = User
+
+	/// Units sold on this line.
+	column quantity
+		dataType: int64
+		formatString: #,0
+		lineageTag: 21e52a78-2099-4aeb-917a-9df598f13419
+		summarizeBy: sum
+		sourceColumn: quantity
+
+		annotation SummarizationSetBy = User
+
+	/// Line discount as a fraction (0.00 - 0.25).
+	column discount
+		dataType: double
+		formatString: 0.00 %
+		lineageTag: f9d97eb5-86d4-49c3-95b9-9ef2026a463a
+		summarizeBy: none
+		sourceColumn: discount
+
+		annotation SummarizationSetBy = User
+
+	partition order_details = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(
+				        File.Contents(NorthwindFolder & "\order_details.csv"),
+				        [Delimiter = ",", Columns = 5, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers", {
+				        {"orderID", "order_id"},
+				        {"productID", "product_id"},
+				        {"unitPrice", "unit_price"},
+				        {"quantity", "quantity"},
+				        {"discount", "discount"}
+				    }),
+				    #"Blanks To Null" = Table.ReplaceValue(#"Renamed Columns", "", null, Replacer.ReplaceValue, {
+				        "order_id", "product_id", "unit_price", "quantity", "discount"
+				    }),
+				    // unit_price is Currency (fixed decimal) so revenue arithmetic is exact rather
+				    // than binary floating point. discount stays a true double in the 0..1 range.
+				    #"Changed Type" = Table.TransformColumnTypes(#"Blanks To Null", {
+				        {"order_id", Int64.Type},
+				        {"product_id", Int64.Type},
+				        {"unit_price", Currency.Type},
+				        {"quantity", Int64.Type},
+				        {"discount", Percentage.Type}
+				    }, "en-US")
+				in
+				    #"Changed Type"
+

@@ -1,0 +1,40 @@
+table DimAgeGroup
+	lineageTag: b33ca95a-0c00-4d83-a80c-aba985497007
+
+	column 'Age Group'
+		dataType: string
+		lineageTag: 9f7dc80a-6f83-45c0-bbcb-5e6a0af812e5
+		summarizeBy: none
+		sourceColumn: Age Group
+		sortByColumn: 'Age Group Sort'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Age Group Sort'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6066daf8-79d6-453a-b9c6-8549e785afea
+		summarizeBy: none
+		sourceColumn: Age Group Sort
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimAgeGroup = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Zenbook\Desktop\power-bi-projects\Social Media Sentiment Analysis\Sentiment Analysis Dataset\train.csv"), [Delimiter = ",", Columns = 10, Encoding = 1252, QuoteStyle = QuoteStyle.Csv]),
+				    PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    SelectedColumns = Table.SelectColumns(PromotedHeaders, {"Age of User"}),
+				    TrimmedAge = Table.TransformColumns(SelectedColumns, {{"Age of User", each Text.Trim(Text.From(_)), type text}}),
+				    RemovedBlankKeys = Table.SelectRows(TrimmedAge, each [Age of User] <> null and [Age of User] <> ""),
+				    DistinctAgeGroups = Table.Distinct(RemovedBlankKeys),
+				    RenamedColumns = Table.RenameColumns(DistinctAgeGroups, {{"Age of User", "Age Group"}}),
+				    AddedSortKey = Table.AddColumn(RenamedColumns, "Age Group Sort", each Number.FromText(Text.BeforeDelimiter([Age Group], "-"), "en-US"), Int64.Type),
+				    ChangedType = Table.TransformColumnTypes(AddedSortKey, {{"Age Group", type text}}, "en-US"),
+				    SortedRows = Table.Sort(ChangedType, {{"Age Group Sort", Order.Ascending}})
+				in
+				    SortedRows
+
+	annotation PBI_ResultType = Table

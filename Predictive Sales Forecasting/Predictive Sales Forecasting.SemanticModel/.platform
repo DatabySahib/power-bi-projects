@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Predictive Sales Forecasting"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "56c4835f-4c0a-4f7a-8bb8-e594bf00c1e4"
+  }
+}

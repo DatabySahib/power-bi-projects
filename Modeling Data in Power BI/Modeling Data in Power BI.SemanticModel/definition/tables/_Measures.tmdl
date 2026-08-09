@@ -1,0 +1,54 @@
+/// Home for all business measures. The single hidden column exists only to host them.
+table _Measures
+	lineageTag: dc009b01-1b06-48c7-aa4e-b559e1f98376
+
+	/// Net sales at order-line grain: price x quantity, less the line discount. Excludes freight.
+	measure 'Total Revenue' =
+			
+			SUMX(
+			    'order_details',
+			    'order_details'[unit_price] * 'order_details'[quantity] * (1 - 'order_details'[discount])
+			)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 7850831d-1042-4137-bb52-7dd51b777e41
+
+	/// Count of distinct orders in the current filter context.
+	measure 'Total Orders' =
+			
+			DISTINCTCOUNT('orders'[order_id])
+		formatString: #,0
+		lineageTag: 5e90d42a-30d4-4028-84a5-20d395ff385b
+
+	/// Total product units sold across order lines.
+	measure 'Total Units Sold' =
+			
+			SUM('order_details'[quantity])
+		formatString: #,0
+		lineageTag: 3549ab99-9587-455d-9a66-3e8cb36ab846
+
+	/// Net revenue per order. Returns 0 rather than blank when no orders are in context.
+	measure 'Average Order Value (AOV)' =
+			
+			DIVIDE([Total Revenue], [Total Orders], 0)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 8bf8bab2-ce46-4afd-b68e-7bffc19c232a
+
+	/// Count of distinct customers in the current filter context.
+	measure 'Total Customers' =
+			
+			DISTINCTCOUNT('customers'[customer_id])
+		formatString: #,0
+		lineageTag: 26e31e9a-ea7d-4aea-8b7a-13deb31f5c25
+
+	column Value
+		dataType: int64
+		isHidden
+		lineageTag: 559a51f8-1902-4c1c-a1bd-3b4b2096bf15
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+	partition _Measures = calculated
+		mode: import
+		source = {0}
+

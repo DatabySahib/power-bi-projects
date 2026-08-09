@@ -1,0 +1,150 @@
+/// Home for every business measure. The single hidden column exists only to host them.
+table _Measures
+	lineageTag: 53477f16-6f78-43d7-bf27-528b3964ba24
+
+	/// Total revenue in the current filter context.
+	measure 'Total Sales' = SUM('Orders'[Sales])
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: 8fc342a4-0625-4adc-84d1-c911d5ad9b54
+
+	/// Count of distinct orders in the current filter context.
+	measure 'Total Orders' = DISTINCTCOUNT('Orders'[Order ID])
+		formatString: #,0
+		lineageTag: 3e4409f5-5f3a-4ba2-89e8-1ceb6c3adc51
+
+	/// Count of distinct customers who ordered in the current filter context.
+	/// Sliced by 'Customer RFM'[RFM Segment] this gives the customer count per segment.
+	measure 'Total Customers' = DISTINCTCOUNT('Orders'[Customer ID])
+		formatString: #,0
+		lineageTag: 91e33ffd-750b-4cde-bf33-19388da44b6e
+
+	/// Revenue per order. Returns 0 rather than blank when no orders are in context.
+	measure 'Average Order Value' = DIVIDE([Total Sales], [Total Orders], 0)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: a28c985a-be9b-49b0-b5ca-6fe8f05aaa1f
+
+	measure 'Total Profit' = SUM('Orders'[Profit])
+		formatString: \$#,0;(\$#,0);\$#,0
+		lineageTag: f7457f80-21c1-43f8-9db6-5f15c5f49346
+
+	measure 'Profit Margin %' = DIVIDE([Total Profit], [Total Sales])
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 7dd8a3e5-43ac-42ac-9f99-c7fdac5da8bc
+
+	measure 'Total Quantity' = SUM('Orders'[Quantity])
+		formatString: #,0
+		lineageTag: b1744f35-27a3-485b-872c-c1780c881ab6
+
+	/// Average revenue contributed per active customer.
+	measure 'Revenue per Customer' = DIVIDE([Total Sales], [Total Customers], 0)
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: a90aacbd-4401-4ebc-ac05-a4374c4e3669
+
+	/// The reference date recency is measured back from: the last day visible in 'Calendar'.
+	/// Unfiltered this is 2014-12-31, the last order date in the dataset.
+	measure 'Snapshot Date' = MAX('Calendar'[Date])
+		formatString: yyyy-mm-dd
+		displayFolder: RFM (Dynamic)
+		lineageTag: 357c67a2-136d-48e5-9f69-1b48922ad1b8
+
+	/// Most recent order date in the current filter context. Named "(Dynamic)" to stay clear of
+	/// the fixed snapshot column 'Customer RFM'[Last Order Date].
+	measure 'Last Order Date (Dynamic)' = MAX('Orders'[Order Date])
+		formatString: yyyy-mm-dd
+		displayFolder: RFM (Dynamic)
+		lineageTag: b5bc797c-41e2-42db-adc3-a3a91f3dd119
+
+	/// R of RFM, recomputed inside the current filter context: days from the last order visible
+	/// to the snapshot date. Put a customer on the rows and this returns that customer's recency.
+	/// Use this on report visuals; use 'Customer RFM'[Recency Days] for the fixed snapshot value.
+	measure 'Recency Days (Dynamic)' =
+			VAR SnapshotDate = MAX('Calendar'[Date])
+			VAR LastPurchase = MAX('Orders'[Order Date])
+			RETURN
+			    IF(
+			        NOT ISBLANK(LastPurchase),
+			        DATEDIFF(LastPurchase, SnapshotDate, DAY)
+			    )
+		formatString: #,0
+		displayFolder: RFM (Dynamic)
+		lineageTag: 2fac3b4f-a933-4b3c-9097-d0ddb2554373
+
+	/// F of RFM in the current filter context.
+	measure 'Frequency (Dynamic)' = DISTINCTCOUNT('Orders'[Order ID])
+		formatString: #,0
+		displayFolder: RFM (Dynamic)
+		lineageTag: 582aa5c1-ed99-488a-b963-917ca7d4f32d
+
+	/// M of RFM in the current filter context.
+	measure 'Monetary (Dynamic)' = SUM('Orders'[Sales])
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		displayFolder: RFM (Dynamic)
+		lineageTag: e6e1e976-e045-4667-a63f-a15911996e56
+
+	/// Customers whose snapshot segment is "At Risk": they used to buy often and spend well
+	/// (F and M in the top three quintiles) but have not ordered recently (R in the bottom two).
+	/// Ignores the Segment slicer on purpose so the KPI keeps reporting the same thing, but still
+	/// honours the Date, Region and Category slicers.
+	measure 'At Risk Customers' = CALCULATE([Total Customers], 'Customer RFM'[RFM Segment] = "At Risk")
+		formatString: #,0
+		displayFolder: Segmentation
+		lineageTag: 9caffb65-eb02-49b8-a817-05c19caccbee
+
+	/// Revenue currently attributable to At Risk customers - the money on the table if they churn.
+	measure 'At Risk Revenue' = CALCULATE([Total Sales], 'Customer RFM'[RFM Segment] = "At Risk")
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Segmentation
+		lineageTag: 8a46c8f6-4887-46fa-b04f-fa5f60a9e363
+
+	/// Snapshot headcount of the segment straight off 'Customer RFM'. Unlike [Total Customers] this
+	/// does not respond to the Date, Region or Category slicers, because segments are assigned once
+	/// against the full history.
+	measure 'Segment Customer Count' = COUNTROWS('Customer RFM')
+		formatString: #,0
+		displayFolder: Segmentation
+		lineageTag: d51dc380-3a37-474d-a0d0-7556cc01fd70
+
+	/// Share of the visible customer base held by the segment on the current row.
+	measure 'Customer Share %' = DIVIDE([Total Customers], CALCULATE([Total Customers], REMOVEFILTERS('Customer RFM')))
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Segmentation
+		lineageTag: b7d0f657-1ba2-4fd8-a785-6941e3958c8f
+
+	/// Share of visible revenue earned by the segment on the current row.
+	measure 'Revenue Share %' = DIVIDE([Total Sales], CALCULATE([Total Sales], REMOVEFILTERS('Customer RFM')))
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Segmentation
+		lineageTag: e793fc13-77c5-4532-82c7-e1dac3b03568
+
+	/// Average snapshot recency of the customers in scope, in days.
+	measure 'Avg Recency Days' = AVERAGE('Customer RFM'[Recency Days])
+		formatString: #,0
+		displayFolder: Segmentation
+		lineageTag: 0dc6c9d3-9ede-443e-8ced-3e612aa5b40c
+
+	/// Average snapshot order count of the customers in scope.
+	measure 'Avg Frequency' = AVERAGE('Customer RFM'[Frequency])
+		formatString: #,0.0
+		displayFolder: Segmentation
+		lineageTag: daae5fb6-6d98-49bb-9a32-badbae8508f9
+
+	/// Average snapshot lifetime spend of the customers in scope.
+	measure 'Avg Monetary' = AVERAGE('Customer RFM'[Monetary])
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Segmentation
+		lineageTag: b50f14ad-a47a-41b0-8d3c-9fa05a08c0ff
+
+	column Value
+		dataType: int64
+		isHidden
+		lineageTag: 268edd92-c170-4645-b2b1-8ba81f0a1856
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source = {0}
+

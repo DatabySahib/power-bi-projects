@@ -1,0 +1,65 @@
+/// Product category dimension (8 rows). Grain: one row per category.
+table categories
+	lineageTag: c1ae4300-d473-4ac2-99b1-9162d5cfab3d
+
+	/// Primary key. Joins to products[category_id].
+	column category_id
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: e4bd2ee6-dcc1-47a4-aee2-9967f519dff8
+		summarizeBy: none
+		sourceColumn: category_id
+
+		annotation SummarizationSetBy = User
+
+	/// Category display name.
+	column category_name
+		dataType: string
+		lineageTag: a125110b-e56a-4ee9-89d5-9d72cfbd6128
+		summarizeBy: none
+		sourceColumn: category_name
+
+		annotation SummarizationSetBy = User
+
+	/// Long-form category description.
+	column description
+		dataType: string
+		lineageTag: 45d4b2cd-57cf-48a0-8503-2ba1e44b4c31
+		summarizeBy: none
+		sourceColumn: description
+
+		annotation SummarizationSetBy = User
+
+	partition categories = m
+		mode: import
+		source =
+				let
+				    // categories.csv is pure ASCII -> UTF-8 read is safe
+				    Source = Csv.Document(
+				        File.Contents(NorthwindFolder & "\categories.csv"),
+				        [Delimiter = ",", Columns = 3, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers", {
+				        {"categoryID", "category_id"},
+				        {"categoryName", "category_name"},
+				        {"description", "description"}
+				    }),
+				    #"Trimmed Text" = Table.TransformColumns(#"Renamed Columns", {
+				        {"category_name", Text.Trim, type text},
+				        {"description", Text.Trim, type text}
+				    }),
+				    #"Blanks To Null" = Table.ReplaceValue(#"Trimmed Text", "", null, Replacer.ReplaceValue, {
+				        "category_name", "description"
+				    }),
+				    // Culture pinned to en-US: the model's sourceQueryCulture is tr-TR, where "." is a
+				    // thousands separator and numeric parsing would silently corrupt decimals.
+				    #"Changed Type" = Table.TransformColumnTypes(#"Blanks To Null", {
+				        {"category_id", Int64.Type},
+				        {"category_name", type text},
+				        {"description", type text}
+				    }, "en-US")
+				in
+				    #"Changed Type"
+

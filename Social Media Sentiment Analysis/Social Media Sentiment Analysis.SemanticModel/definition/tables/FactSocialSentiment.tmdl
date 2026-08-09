@@ -1,0 +1,81 @@
+table FactSocialSentiment
+	lineageTag: df995095-7ea4-40cf-9fc8-19624a7c9336
+
+	column textID
+		dataType: string
+		isHidden
+		lineageTag: a12bc52a-b00b-406e-8d1f-0639465ebe02
+		summarizeBy: none
+		sourceColumn: textID
+
+		annotation SummarizationSetBy = Automatic
+
+	column text
+		dataType: string
+		lineageTag: 90c096fc-8f64-4ae7-9d33-79f3cbb70574
+		summarizeBy: none
+		sourceColumn: text
+
+		annotation SummarizationSetBy = Automatic
+
+	column sentiment
+		dataType: string
+		lineageTag: d7e10538-0411-4e92-981d-c90b15c68151
+		summarizeBy: none
+		sourceColumn: sentiment
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Time of Tweet'
+		dataType: string
+		lineageTag: 615c2110-5457-44e2-8107-0a3ec41d5ac7
+		summarizeBy: none
+		sourceColumn: Time of Tweet
+		sortByColumn: 'Time of Tweet Sort'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Age of User'
+		dataType: string
+		isHidden
+		lineageTag: ebf74854-a9c5-4d09-8239-3ea9889bea65
+		summarizeBy: none
+		sourceColumn: Age of User
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		isHidden
+		lineageTag: 5e5d9761-42e2-4121-a80a-d88cb6ee9074
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Time of Tweet Sort'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 9588316f-cd53-4117-816f-dec2995029f6
+		summarizeBy: none
+		sourceColumn: Time of Tweet Sort
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactSocialSentiment = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Users\Zenbook\Desktop\power-bi-projects\Social Media Sentiment Analysis\Sentiment Analysis Dataset\train.csv"), [Delimiter = ",", Columns = 10, Encoding = 1252, QuoteStyle = QuoteStyle.Csv]),
+				    PromotedHeaders = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    SelectedColumns = Table.SelectColumns(PromotedHeaders, {"textID", "text", "sentiment", "Time of Tweet", "Age of User", "Country"}),
+				    ReplacedNullText = Table.ReplaceValue(SelectedColumns, null, "", Replacer.ReplaceValue, {"text"}),
+				    CleanedColumns = Table.TransformColumns(ReplacedNullText, {{"textID", each Text.Trim(Text.From(_)), type text}, {"text", each Text.Clean(Text.Trim(Text.From(_))), type text}, {"sentiment", each Text.Proper(Text.Trim(Text.From(_))), type text}, {"Time of Tweet", each Text.Proper(Text.Trim(Text.From(_))), type text}, {"Age of User", each Text.Trim(Text.From(_)), type text}, {"Country", each Text.Trim(Text.From(_)), type text}}),
+				    RemovedBlankKeys = Table.SelectRows(CleanedColumns, each [textID] <> null and [textID] <> ""),
+				    AddedTimeOfTweetSort = Table.AddColumn(RemovedBlankKeys, "Time of Tweet Sort", each if [Time of Tweet] = "Morning" then 1 else if [Time of Tweet] = "Noon" then 2 else if [Time of Tweet] = "Night" then 3 else 4, Int64.Type),
+				    ChangedType = Table.TransformColumnTypes(AddedTimeOfTweetSort, {{"textID", type text}, {"text", type text}, {"sentiment", type text}, {"Time of Tweet", type text}, {"Age of User", type text}, {"Country", type text}}, "en-US")
+				in
+				    ChangedType
+
+	annotation PBI_ResultType = Table

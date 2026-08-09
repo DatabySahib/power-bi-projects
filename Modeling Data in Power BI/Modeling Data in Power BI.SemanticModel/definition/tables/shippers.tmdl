@@ -1,0 +1,50 @@
+/// Shipping carrier dimension (3 rows). Grain: one row per carrier.
+table shippers
+	lineageTag: d317b58f-38e7-4be8-a8df-779e46f4e65c
+
+	/// Primary key. Joins to orders[shipper_id].
+	column shipper_id
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: 1226579f-0b28-48ce-a969-547681b4ba74
+		summarizeBy: none
+		sourceColumn: shipper_id
+
+		annotation SummarizationSetBy = User
+
+	/// Carrier name.
+	column company_name
+		dataType: string
+		lineageTag: bfc79a56-4c87-43a0-94e9-3b6bf31d3fb0
+		summarizeBy: none
+		sourceColumn: company_name
+
+		annotation SummarizationSetBy = User
+
+	partition shippers = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(
+				        File.Contents(NorthwindFolder & "\shippers.csv"),
+				        [Delimiter = ",", Columns = 2, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers", {
+				        {"shipperID", "shipper_id"},
+				        {"companyName", "company_name"}
+				    }),
+				    #"Trimmed Text" = Table.TransformColumns(#"Renamed Columns", {
+				        {"company_name", Text.Trim, type text}
+				    }),
+				    #"Blanks To Null" = Table.ReplaceValue(#"Trimmed Text", "", null, Replacer.ReplaceValue, {
+				        "company_name"
+				    }),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Blanks To Null", {
+				        {"shipper_id", Int64.Type},
+				        {"company_name", type text}
+				    }, "en-US")
+				in
+				    #"Changed Type"
+

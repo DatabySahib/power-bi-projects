@@ -1,0 +1,168 @@
+/// Home for all report measures. The single hidden column exists only to host them.
+table _Measures
+	lineageTag: 0c080d7d-f312-4c92-900d-72b7b5d94d9c
+
+	/// Unweighted mean life expectancy across the countries in the current filter context.
+	/// Note: this treats every country equally regardless of size - see 'Life Expectancy (Population Weighted)'.
+	measure 'Average Life Expectancy' =
+			
+			AVERAGE ( gapminder[life_exp] )
+		formatString: 0.0
+		lineageTag: 41145cb1-625e-4cbb-944f-5ebd96db1dab
+
+	/// Unweighted mean GDP per capita across the countries in the current filter context.
+	measure 'Average GDP per Capita' =
+			
+			AVERAGE ( gapminder[gdp_cap] )
+		formatString: \$#,0
+		lineageTag: 2935aef6-9e18-4f51-a01e-0559e1a31c69
+
+	/// Sum of country populations in the current filter context. Drives scatter bubble size.
+	measure 'Total Population' =
+			
+			SUM ( gapminder[population] )
+		formatString: #,0
+		lineageTag: 4cc3aa08-3082-40ef-a23f-e2cc371e0bcc
+
+	/// Growth in average GDP per capita versus the prior observation period.
+	/// The Gapminder data is sampled every 5 years, so "prior period" is 5 years back, not 1.
+	/// Blank for 1952, which has no predecessor.
+	measure 'GDP per Capita YoY Growth %' =
+			
+			VAR CurrentYear = MAX ( gapminder[year] )
+			VAR PriorYear =
+			    CALCULATE (
+			        MAX ( gapminder[year] ),
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] < CurrentYear
+			    )
+			VAR CurrentValue = [Average GDP per Capita]
+			VAR PriorValue =
+			    CALCULATE (
+			        [Average GDP per Capita],
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] = PriorYear
+			    )
+			RETURN
+			    DIVIDE ( CurrentValue - PriorValue, PriorValue )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 0d0f89f1-6788-45ad-8cc1-74b3add00ef5
+
+	/// Growth in average life expectancy versus the prior observation period (5 years back).
+	measure 'Life Expectancy YoY Growth %' =
+			
+			VAR CurrentYear = MAX ( gapminder[year] )
+			VAR PriorYear =
+			    CALCULATE (
+			        MAX ( gapminder[year] ),
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] < CurrentYear
+			    )
+			VAR CurrentValue = [Average Life Expectancy]
+			VAR PriorValue =
+			    CALCULATE (
+			        [Average Life Expectancy],
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] = PriorYear
+			    )
+			RETURN
+			    DIVIDE ( CurrentValue - PriorValue, PriorValue )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 83daf115-8888-408b-a28c-b83c7f9ff055
+
+	/// Growth in total population versus the prior observation period (5 years back).
+	measure 'Population YoY Growth %' =
+			
+			VAR CurrentYear = MAX ( gapminder[year] )
+			VAR PriorYear =
+			    CALCULATE (
+			        MAX ( gapminder[year] ),
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] < CurrentYear
+			    )
+			VAR CurrentValue = [Total Population]
+			VAR PriorValue =
+			    CALCULATE (
+			        [Total Population],
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] = PriorYear
+			    )
+			RETURN
+			    DIVIDE ( CurrentValue - PriorValue, PriorValue )
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 190b137b-9406-493c-81c7-c73db6b3e2f3
+
+	/// Population-weighted life expectancy: the expectancy of a randomly chosen person, not a randomly
+	/// chosen country. This is the statistically correct way to aggregate a region.
+	measure 'Life Expectancy (Population Weighted)' =
+			
+			DIVIDE (
+			    SUMX ( gapminder, gapminder[life_exp] * gapminder[population] ),
+			    SUM ( gapminder[population] )
+			)
+		formatString: 0.0
+		lineageTag: 0bccd724-7f33-4f9c-b9a5-3162e407b44d
+
+	/// Snapshot value for the KPI cards. Summing population across all 12 sampled years would give
+	/// ~50bn, which is meaningless, so the cards report the newest year still inside the slicer
+	/// selection (2007 when nothing is selected). Matches the "current year" basis of the growth measures.
+	measure 'Total Population (Latest Year)' =
+			
+			VAR LastYear =
+			    CALCULATE ( MAX ( gapminder[year] ), ALLSELECTED ( gapminder[year] ) )
+			RETURN
+			    CALCULATE (
+			        [Total Population],
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] = LastYear
+			    )
+		formatString: #,0
+		lineageTag: 9258e77f-2544-43bc-8c02-ca0072d5913c
+
+	/// Average life expectancy in the newest year inside the slicer selection. See 'Total Population (Latest Year)'.
+	measure 'Avg Life Expectancy (Latest Year)' =
+			
+			VAR LastYear =
+			    CALCULATE ( MAX ( gapminder[year] ), ALLSELECTED ( gapminder[year] ) )
+			RETURN
+			    CALCULATE (
+			        [Average Life Expectancy],
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] = LastYear
+			    )
+		formatString: 0.0
+		lineageTag: 22e68b8c-b467-45b7-be5a-cf724d8e2070
+
+	/// Average GDP per capita in the newest year inside the slicer selection. See 'Total Population (Latest Year)'.
+	measure 'Avg GDP per Capita (Latest Year)' =
+			
+			VAR LastYear =
+			    CALCULATE ( MAX ( gapminder[year] ), ALLSELECTED ( gapminder[year] ) )
+			RETURN
+			    CALCULATE (
+			        [Average GDP per Capita],
+			        REMOVEFILTERS ( gapminder[year] ),
+			        gapminder[year] = LastYear
+			    )
+		formatString: \$#,0
+		lineageTag: e35dee7e-8152-40b8-9059-3f42b758795f
+
+	/// Distinct countries surviving the current slicer selection.
+	measure 'Countries in View' =
+			
+			DISTINCTCOUNT ( gapminder[country] )
+		formatString: #,0
+		lineageTag: ec256a8c-c2c0-4e46-8df8-061a6842fd3d
+
+	column Value
+		dataType: int64
+		isHidden
+		lineageTag: 2cbb446d-6689-447e-9508-c31e35318d5a
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+	partition _Measures = calculated
+		mode: import
+		source = {0}
+

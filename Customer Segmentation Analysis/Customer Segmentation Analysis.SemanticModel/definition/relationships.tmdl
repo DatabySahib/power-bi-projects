@@ -1,0 +1,8 @@
+relationship 2b3c6cd6-e5da-4ada-b244-55716cf5f7d6
+	fromColumn: Orders.'Order Date'
+	toColumn: Calendar.Date
+
+relationship 93c5fcb6-3642-4b9c-b590-95b614462f44
+	fromColumn: Orders.'Customer ID'
+	toColumn: 'Customer RFM'.'Customer ID'
+

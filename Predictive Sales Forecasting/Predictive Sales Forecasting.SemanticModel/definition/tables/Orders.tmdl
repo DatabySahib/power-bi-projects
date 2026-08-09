@@ -1,0 +1,282 @@
+/// Fact table at order-line grain (9,994 rows) loaded from 'Sample - Superstore.csv'.
+/// US-only Superstore extract: 5,009 orders, 793 customers, order dates 2014-01-03 to 2017-12-30.
+/// The file is Windows-1252 encoded (curly quotes and accented product names), so the query pins
+/// Encoding = 1252 rather than the usual 65001.
+table Orders
+	lineageTag: 25e00961-21dd-4826-8936-c98337891ade
+
+	/// Surrogate key of the source row, unique per order line.
+	column 'Row ID'
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: a847ad9a-8c58-416b-9c38-3a5b2e8bc9c9
+		summarizeBy: none
+		sourceColumn: Row ID
+
+		annotation SummarizationSetBy = User
+
+	/// Order header identifier, 5,009 distinct values. Denominator of [Average Order Value (AOV)].
+	column 'Order ID'
+		dataType: string
+		lineageTag: f3265bcd-3964-4f36-9185-d63337560e79
+		summarizeBy: none
+		sourceColumn: Order ID
+
+		annotation SummarizationSetBy = User
+
+	/// Date the order was placed. Active relationship to 'Dim_Date'[Date]; this is the date all
+	/// time intelligence measures resolve against.
+	column 'Order Date'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 581fa2c4-ba00-4eb9-8ff5-c4c15cbe1069
+		summarizeBy: none
+		sourceColumn: Order Date
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Date the order shipped. Inactive relationship to 'Dim_Date'[Date] - activate it with
+	/// USERELATIONSHIP to analyse by shipping date. Runs to 2018-01-05, five days past the end
+	/// of 'Dim_Date'; see README for the 42 rows this affects.
+	column 'Ship Date'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 4f246aed-6817-4c6e-a03c-9c62e050301d
+		summarizeBy: none
+		sourceColumn: Ship Date
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Order-to-ship lag in days, computed in the query. Use this for shipping duration analysis
+	/// instead of the inactive 'Ship Date' relationship - it is unaffected by the calendar range.
+	column 'Ship Days'
+		dataType: int64
+		formatString: #,0
+		lineageTag: b0690449-99ba-499c-8c15-a20fc02045c2
+		summarizeBy: average
+		sourceColumn: Ship Days
+
+		annotation SummarizationSetBy = User
+
+	/// Shipping service class: First Class, Same Day, Second Class, Standard Class.
+	column 'Ship Mode'
+		dataType: string
+		lineageTag: 8a5b0cec-0b83-43f3-8345-84ee27804fe0
+		summarizeBy: none
+		sourceColumn: Ship Mode
+
+		annotation SummarizationSetBy = User
+
+	/// Customer key, 793 distinct values.
+	column 'Customer ID'
+		dataType: string
+		lineageTag: 49eb3f7c-aaf0-426d-997b-b49523208e9c
+		summarizeBy: none
+		sourceColumn: Customer ID
+
+		annotation SummarizationSetBy = User
+
+	column 'Customer Name'
+		dataType: string
+		lineageTag: bd4be522-c307-43bc-95ef-0454ab55c992
+		summarizeBy: none
+		sourceColumn: Customer Name
+
+		annotation SummarizationSetBy = User
+
+	/// Business segment: Consumer, Corporate, Home Office. Drives the Segment slicer.
+	column Segment
+		dataType: string
+		lineageTag: 31da3eb7-e1b6-43fd-8f60-49a3a44504e2
+		summarizeBy: none
+		sourceColumn: Segment
+
+		annotation SummarizationSetBy = User
+
+	/// Constant "United States" across every row - the extract is US-only.
+	column Country
+		dataType: string
+		lineageTag: 0cd815eb-5979-4785-84f4-1c5d9c1648f7
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = User
+
+	/// 531 distinct cities. Tagged as City so map visuals geocode it correctly.
+	column City
+		dataType: string
+		lineageTag: 07156cc8-e51f-47f5-991f-2da80dae1b21
+		dataCategory: City
+		summarizeBy: none
+		sourceColumn: City
+
+		annotation SummarizationSetBy = User
+
+	/// 49 distinct states. Tagged as StateOrProvince for geocoding.
+	column State
+		dataType: string
+		lineageTag: 680b084c-ca2c-4764-a902-83ba2df7e333
+		dataCategory: StateOrProvince
+		summarizeBy: none
+		sourceColumn: State
+
+		annotation SummarizationSetBy = User
+
+	/// Kept as text and left-padded to five digits in the query - 438 source values had lost their
+	/// leading zero (e.g. 1040 for Massachusetts, which must be 01040).
+	column 'Postal Code'
+		dataType: string
+		lineageTag: b141485e-a753-4bc6-be43-d2c025f703a2
+		dataCategory: PostalCode
+		summarizeBy: none
+		sourceColumn: Postal Code
+
+		annotation SummarizationSetBy = User
+
+	/// Sales region: Central, East, South, West. Drives the Region slicer.
+	column Region
+		dataType: string
+		lineageTag: 5be32c22-8355-4ee4-9df0-8d7303230fd8
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = User
+
+	column 'Product ID'
+		dataType: string
+		lineageTag: 7af28fc9-f5a1-4998-a9a7-4d6afef23067
+		summarizeBy: none
+		sourceColumn: Product ID
+
+		annotation SummarizationSetBy = User
+
+	/// Top-level product category: Furniture, Office Supplies, Technology.
+	column Category
+		dataType: string
+		lineageTag: 4c493b0b-3aa5-4ae3-ab2f-9205d56cc38f
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = User
+
+	/// 17 product sub-categories. Second level of the Category drill-down on the breakdown chart.
+	column Sub-Category
+		dataType: string
+		lineageTag: 7ed760fd-2fad-4b8b-b202-163f05ab213e
+		summarizeBy: none
+		sourceColumn: Sub-Category
+
+		annotation SummarizationSetBy = User
+
+	column 'Product Name'
+		dataType: string
+		lineageTag: 81b1c858-06ed-41ce-add7-0fb6ade430f6
+		summarizeBy: none
+		sourceColumn: Product Name
+
+		annotation SummarizationSetBy = User
+
+	/// Line revenue. Feeds [Total Sales].
+	column Sales
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 60e81478-6476-409c-bf54-abab55059ca9
+		summarizeBy: sum
+		sourceColumn: Sales
+
+		annotation SummarizationSetBy = User
+
+	column Quantity
+		dataType: int64
+		formatString: #,0
+		lineageTag: d2fabc48-64d3-4ba6-8d48-ee421ba64e93
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = User
+
+	/// Line discount, 0 to 0.80. Averaged rather than summed by default.
+	column Discount
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: b4d5fea0-496b-41fd-be9d-050321f656c4
+		summarizeBy: average
+		sourceColumn: Discount
+
+		annotation SummarizationSetBy = User
+
+	/// Line profit, negative on heavily discounted lines. Feeds [Total Profit].
+	column Profit
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 00e9fd4d-d9c2-40cd-a09d-9ed250e0a39f
+		summarizeBy: sum
+		sourceColumn: Profit
+
+		annotation SummarizationSetBy = User
+
+	partition Orders = m
+		mode: import
+		source =
+				let
+				    // Encoding 1252, not 65001: the file is Windows-1252 and contains curly quotes,
+				    // non-breaking spaces and accented characters that fail to decode as UTF-8.
+				    Source = Csv.Document(
+				        File.Contents(SourceFolder & "\Sample - Superstore.csv"),
+				        [Delimiter = ",", Columns = 21, Encoding = 1252, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Trimmed Keys" = Table.TransformColumns(#"Promoted Headers", {
+				        {"Order ID", Text.Trim, type text},
+				        {"Customer ID", Text.Trim, type text}
+				    }),
+				    // The "en-US" culture argument is mandatory. The model's sourceQueryCulture is
+				    // tr-TR, where "." is a thousands separator and dates read as d.M.yyyy - without
+				    // it "261.96" becomes 26196 and the M/d/yyyy dates fail to parse.
+				    #"Changed Type" = Table.TransformColumnTypes(#"Trimmed Keys", {
+				        {"Row ID", Int64.Type},
+				        {"Order ID", type text},
+				        {"Order Date", type date},
+				        {"Ship Date", type date},
+				        {"Ship Mode", type text},
+				        {"Customer ID", type text},
+				        {"Customer Name", type text},
+				        {"Segment", type text},
+				        {"Country", type text},
+				        {"City", type text},
+				        {"State", type text},
+				        {"Postal Code", type text},
+				        {"Region", type text},
+				        {"Product ID", type text},
+				        {"Category", type text},
+				        {"Sub-Category", type text},
+				        {"Product Name", type text},
+				        {"Sales", Currency.Type},
+				        {"Quantity", Int64.Type},
+				        {"Discount", type number},
+				        {"Profit", Currency.Type}
+				    }, "en-US"),
+				    // 438 postal codes lost a leading zero upstream (1040 -> 01040). Restore it so
+				    // the column stays a valid five-digit ZIP for geocoding.
+				    #"Padded Postal Code" = Table.TransformColumns(#"Changed Type", {
+				        {"Postal Code", each Text.PadStart(Text.From(_, "en-US"), 5, "0"), type text}
+				    }),
+				    // Shipping lag as a stored column, so shipping analysis does not depend on the
+				    // inactive 'Ship Date' relationship.
+				    #"Added Ship Days" = Table.AddColumn(
+				        #"Padded Postal Code",
+				        "Ship Days",
+				        each Duration.Days([Ship Date] - [Order Date]),
+				        Int64.Type
+				    )
+				in
+				    #"Added Ship Days"
+
+	annotation PBI_ResultType = Table
+

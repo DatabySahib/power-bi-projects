@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Customer Lifetime Value Analysis"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "41ec81d4-afad-4f07-837d-c0ea940fe4b5"
+  }
+}

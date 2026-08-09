@@ -1,0 +1,9 @@
+relationship 4f246aed-6817-4c6e-a03c-9c62e050301c
+	fromColumn: Orders.'Order Date'
+	toColumn: Dim_Date.Date
+
+relationship b0690449-99ba-499c-8c15-a20fc02045c1
+	isActive: false
+	fromColumn: Orders.'Ship Date'
+	toColumn: Dim_Date.Date
+

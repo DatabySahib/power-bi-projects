@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Customer Segmentation Analysis"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "b02d28a2-c16d-4036-96ac-f569d39855b2"
+  }
+}

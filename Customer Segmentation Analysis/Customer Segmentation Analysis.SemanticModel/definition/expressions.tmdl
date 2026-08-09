@@ -1,0 +1,6 @@
+/// Folder holding superstore.csv. Change this one value to repoint the whole model.
+expression SourceFolder = "C:\Users\Zenbook\Desktop\Customer Segmentation Analysis" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 2be9a77c-7d7b-4eeb-b24d-4a68480cc881
+
+	annotation PBI_ResultType = Text
+

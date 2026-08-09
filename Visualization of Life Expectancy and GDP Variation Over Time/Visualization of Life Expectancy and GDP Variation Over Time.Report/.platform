@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "Visualization of Life Expectancy and GDP Variation Over Time"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "2c0bbdb3-9c5f-4f82-9bfb-6018090373fa"
+  }
+}

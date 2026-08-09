@@ -1,0 +1,7 @@
+/// Folder holding 'Sample - Superstore.csv'. Change this one value to repoint the whole model
+/// after moving or cloning the project (Home > Transform data > Manage parameters).
+expression SourceFolder = "C:\Users\Zenbook\Desktop\Predictive Sales Forecasting" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 0e9ecf24-3b04-43a0-baa7-10719ced15c9
+
+	annotation PBI_ResultType = Text
+

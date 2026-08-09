@@ -1,0 +1,7 @@
+relationship DimGeography_FactSocialSentiment
+	fromColumn: FactSocialSentiment.Country
+	toColumn: DimGeography.Country
+
+relationship DimAgeGroup_FactSocialSentiment
+	fromColumn: FactSocialSentiment.'Age of User'
+	toColumn: DimAgeGroup.'Age Group'

@@ -1,0 +1,110 @@
+/// Marked date table covering whole years spanned by 'Orders'[Order Date] (2011-01-01 to 2014-12-31).
+/// MAX('Calendar'[Date]) is the RFM snapshot date the dynamic Recency measure counts back from.
+table Calendar
+	lineageTag: 6dbbfc61-bb28-443c-8d56-6c90c5a26af5
+	dataCategory: Time
+
+	/// Continuous, gap-free day key. One-to-many to 'Orders'[Order Date].
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: yyyy-mm-dd
+		lineageTag: 18f108a6-62f6-4b61-be66-cea34c9b464d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Date]
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Year = YEAR('Calendar'[Date])
+		formatString: 0
+		lineageTag: 44cf98bd-10c5-47f9-91ad-3e6e01f9c4f0
+		summarizeBy: none
+
+		annotation SummarizationSetBy = User
+
+	column 'Quarter Number' = QUARTER('Calendar'[Date])
+		isHidden
+		formatString: 0
+		lineageTag: d22d3da1-9b5d-46f9-8608-2aaea253e9aa
+		summarizeBy: none
+
+		annotation SummarizationSetBy = User
+
+	/// Q1 - Q4. Sorted by [Quarter Number].
+	column Quarter = "Q" & QUARTER('Calendar'[Date])
+		lineageTag: 16dffebf-3803-4299-8d29-72d9b2a60263
+		summarizeBy: none
+		sortByColumn: 'Quarter Number'
+
+		annotation SummarizationSetBy = User
+
+	column 'Month Number' = MONTH('Calendar'[Date])
+		isHidden
+		formatString: 0
+		lineageTag: 5b80cc52-6d76-465f-8561-c336d4e8a1f9
+		summarizeBy: none
+
+		annotation SummarizationSetBy = User
+
+	/// Three-letter month abbreviation. Sorted by [Month Number].
+	column Month = FORMAT('Calendar'[Date], "MMM")
+		lineageTag: 922e2127-560c-47c8-a3e5-e923e82747ef
+		summarizeBy: none
+		sortByColumn: 'Month Number'
+
+		annotation SummarizationSetBy = User
+
+	/// Full month name. Sorted by [Month Number].
+	column 'Month Name' = FORMAT('Calendar'[Date], "MMMM")
+		lineageTag: 8699091b-e21d-4d7d-a3a5-c4dbae3d9801
+		summarizeBy: none
+		sortByColumn: 'Month Number'
+
+		annotation SummarizationSetBy = User
+
+	column 'Year Month Number' = YEAR('Calendar'[Date]) * 100 + MONTH('Calendar'[Date])
+		isHidden
+		formatString: 0
+		lineageTag: 43197743-6f5e-4ccd-9dec-be53bee55373
+		summarizeBy: none
+
+		annotation SummarizationSetBy = User
+
+	/// Sortable month label, e.g. "2014 Dec". Sorted by [Year Month Number].
+	column 'Year Month' = FORMAT('Calendar'[Date], "yyyy MMM")
+		lineageTag: ae54446e-8993-4577-a8fd-de3254e564c3
+		summarizeBy: none
+		sortByColumn: 'Year Month Number'
+
+		annotation SummarizationSetBy = User
+
+	column 'Day of Week Number' = WEEKDAY('Calendar'[Date], 2)
+		isHidden
+		formatString: 0
+		lineageTag: 7490ee7f-7b33-42dd-99e5-0f82cc1c5c23
+		summarizeBy: none
+
+		annotation SummarizationSetBy = User
+
+	/// Weekday name, Monday first. Sorted by [Day of Week Number].
+	column 'Day of Week' = FORMAT('Calendar'[Date], "dddd")
+		lineageTag: a3c351b3-2fe8-425b-9e2c-edef9906655f
+		summarizeBy: none
+		sortByColumn: 'Day of Week Number'
+
+		annotation SummarizationSetBy = User
+
+	partition Calendar = calculated
+		mode: import
+		source =
+				VAR MinOrderDate = MIN('Orders'[Order Date])
+				VAR MaxOrderDate = MAX('Orders'[Order Date])
+				RETURN
+				    CALENDAR(
+				        DATE(YEAR(MinOrderDate), 1, 1),
+				        DATE(YEAR(MaxOrderDate), 12, 31)
+				    )
+

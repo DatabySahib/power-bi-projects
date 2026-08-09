@@ -1,0 +1,139 @@
+table DimDate
+	lineageTag: c8fb4a9d-e588-49b5-b26d-33c94d3dc348
+	dataCategory: Time
+
+	column Date
+		isKey
+		formatString: yyyy-mm-dd
+		lineageTag: 393bdbee-e4dd-4861-9234-85495c46bc8b
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Date]
+
+		annotation SummarizationSetBy = User
+
+	column Year
+		formatString: 0
+		lineageTag: 9f628377-97aa-4949-b627-97b6028e922b
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Year]
+
+		annotation SummarizationSetBy = User
+
+	column Month
+		lineageTag: 7fe7512b-2cb1-49d2-9f40-5d5e23e0e824
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Month]
+		sortByColumn: 'Month Number'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Month Number'
+		isHidden
+		formatString: 0
+		lineageTag: 0e4f6f1d-8ecd-42f7-9f47-9dfee53a7569
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Month Number]
+
+		annotation SummarizationSetBy = User
+
+	column 'Month Short'
+		lineageTag: 45d195f7-0087-4311-9045-8210ebb9ceae
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Month Short]
+		sortByColumn: 'Month Number'
+
+		annotation SummarizationSetBy = Automatic
+
+	column YearMonth
+		lineageTag: 5f6980fb-5a2b-4263-9ebc-dfd60a4b8d27
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [YearMonth]
+		sortByColumn: 'YearMonth Sort'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'YearMonth Sort'
+		isHidden
+		formatString: 0
+		lineageTag: bb1a7f1e-b274-4bb8-8eea-a23f01206063
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [YearMonth Sort]
+
+		annotation SummarizationSetBy = User
+
+	column Day
+		formatString: 0
+		lineageTag: cd2c00b2-3696-4859-8960-1dcd9ff59b88
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Day]
+
+		annotation SummarizationSetBy = User
+
+	column Week
+		formatString: 0
+		lineageTag: 39695735-fac5-4625-967b-5498b01e623f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Week]
+
+		annotation SummarizationSetBy = User
+
+	column YearWeek
+		lineageTag: bd99e4f8-7849-45a3-967c-127f6a59feeb
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [YearWeek]
+
+		annotation SummarizationSetBy = Automatic
+
+	column DayOfWeek
+		lineageTag: 893515f9-0da8-466a-8948-8f40d89ce1a6
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [DayOfWeek]
+		sortByColumn: 'DayOfWeek Number'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'DayOfWeek Number'
+		isHidden
+		formatString: 0
+		lineageTag: b9c9cd7f-d31c-4d35-9aee-ceac1745a2d2
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [DayOfWeek Number]
+
+		annotation SummarizationSetBy = User
+
+	partition DimDate = calculated
+		mode: import
+		source =
+				VAR MinDate = MIN( FactTransactions[PurchaseDate] )
+				VAR MaxDate = MAX( FactTransactions[PurchaseDate] )
+				VAR BaseCalendar = CALENDAR( MinDate, MaxDate )
+				RETURN
+					ADDCOLUMNS(
+						BaseCalendar,
+						"Year", YEAR( [Date] ),
+						"Month", FORMAT( [Date], "MMMM", "en-US" ),
+						"Month Number", MONTH( [Date] ),
+						"Month Short", FORMAT( [Date], "MMM", "en-US" ),
+						"YearMonth", FORMAT( [Date], "yyyy-MM", "en-US" ),
+						"YearMonth Sort", YEAR( [Date] ) * 100 + MONTH( [Date] ),
+						"Day", DAY( [Date] ),
+						"Week", WEEKNUM( [Date], 2 ),
+						"YearWeek",
+							FORMAT( YEAR( [Date] ), "0000", "en-US" ) & "-W"
+								& FORMAT( WEEKNUM( [Date], 2 ), "00", "en-US" ),
+						"DayOfWeek", FORMAT( [Date], "dddd", "en-US" ),
+						"DayOfWeek Number", WEEKDAY( [Date], 2 )
+					)
+

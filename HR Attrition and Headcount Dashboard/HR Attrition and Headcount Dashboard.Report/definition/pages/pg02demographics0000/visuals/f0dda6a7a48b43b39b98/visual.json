@@ -1,0 +1,166 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.4.0/schema.json",
+  "name": "f0dda6a7a48b43b39b98",
+  "position": {
+    "x": 552,
+    "y": 382,
+    "z": 4,
+    "width": 712,
+    "height": 322,
+    "tabOrder": 4
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "HR_Data"
+                    }
+                  },
+                  "Property": "Employee Number"
+                }
+              },
+              "queryRef": "HR_Data.Employee Number",
+              "nativeQueryRef": "Employee Number"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "HR_Data"
+                    }
+                  },
+                  "Property": "Department"
+                }
+              },
+              "queryRef": "HR_Data.Department",
+              "nativeQueryRef": "Department"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "HR_Data"
+                    }
+                  },
+                  "Property": "Job Role"
+                }
+              },
+              "queryRef": "HR_Data.Job Role",
+              "nativeQueryRef": "Job Role"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "HR_Data"
+                    }
+                  },
+                  "Property": "Monthly Income"
+                }
+              },
+              "queryRef": "HR_Data.Monthly Income",
+              "nativeQueryRef": "Monthly Income"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "HR_Data"
+                    }
+                  },
+                  "Property": "Overtime"
+                }
+              },
+              "queryRef": "HR_Data.Overtime",
+              "nativeQueryRef": "Overtime"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "HR_Data"
+                    }
+                  },
+                  "Property": "Attrition"
+                }
+              },
+              "queryRef": "HR_Data.Attrition",
+              "nativeQueryRef": "Attrition"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "HR_Data"
+                  }
+                },
+                "Property": "Employee Number"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ],
+        "isDefaultSort": true
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Detailed Employee Breakdown'"
+                }
+              }
+            },
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "12D"
+                }
+              }
+            },
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Literal": {
+                      "Value": "'#0F2B46'"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,336 @@
+/// Fact table at order-line grain (51,290 rows) loaded from superstore.csv (Global Superstore, 2011-2014).
+/// Source column names use dots (Customer.ID, Order.Date, Sub.Category); they are renamed to
+/// business-friendly names in the query so the model reads cleanly.
+table Orders
+	lineageTag: e6bec97b-b929-4b21-9861-4c8f2681f836
+
+	/// Surrogate key of the source row. Unique per order line.
+	column 'Row ID'
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: fbe2efb6-f820-48a6-bd29-103a94ef91b0
+		summarizeBy: none
+		sourceColumn: Row ID
+
+		annotation SummarizationSetBy = User
+
+	/// Order header identifier. 25,035 distinct orders. Basis for [Total Orders] and RFM Frequency.
+	column 'Order ID'
+		dataType: string
+		lineageTag: 93a566c9-0f13-436a-add3-022b509c92a9
+		summarizeBy: none
+		sourceColumn: Order ID
+
+		annotation SummarizationSetBy = User
+
+	/// Date the order was placed. Active relationship to 'Calendar'[Date].
+	column 'Order Date'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: d2b0c122-b205-4bb4-a75e-ea9a3491870c
+		summarizeBy: none
+		sourceColumn: Order Date
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Date the order shipped. Runs up to 2015-01-07, past the end of the order calendar.
+	column 'Ship Date'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: d7302e00-1e89-4caa-bde4-bd54af21c8f5
+		summarizeBy: none
+		sourceColumn: Ship Date
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Shipping service class: First Class, Same Day, Second Class, Standard Class.
+	column 'Ship Mode'
+		dataType: string
+		lineageTag: e82739a8-84a6-4c21-b4e8-6018f724a8a4
+		summarizeBy: none
+		sourceColumn: Ship Mode
+
+		annotation SummarizationSetBy = User
+
+	/// Fulfilment priority assigned to the order: Critical, High, Medium, Low.
+	column 'Order Priority'
+		dataType: string
+		lineageTag: f48b18fe-c970-42b5-8bf7-f140761832c5
+		summarizeBy: none
+		sourceColumn: Order Priority
+
+		annotation SummarizationSetBy = User
+
+	/// Customer key (4,873 distinct). Grain of the RFM analysis; joins to 'Customer RFM'[Customer ID].
+	column 'Customer ID'
+		dataType: string
+		lineageTag: b4fbc695-6525-4d7c-af7c-e8ab89245381
+		summarizeBy: none
+		sourceColumn: Customer ID
+
+		annotation SummarizationSetBy = User
+
+	/// Display name of the customer. Only 795 distinct names across 4,873 IDs, so always
+	/// group by Customer ID rather than name when counting customers.
+	column 'Customer Name'
+		dataType: string
+		lineageTag: 148d629a-1543-4b7d-85d0-8d02b33fa231
+		summarizeBy: none
+		sourceColumn: Customer Name
+
+		annotation SummarizationSetBy = User
+
+	/// Source business segment: Consumer, Corporate, Home Office. Not the RFM segment -
+	/// see 'Customer RFM'[RFM Segment] for that.
+	column Segment
+		dataType: string
+		lineageTag: 494711a9-32a8-47a1-81a4-49281a39ec54
+		summarizeBy: none
+		sourceColumn: Segment
+
+		annotation SummarizationSetBy = User
+
+	column City
+		dataType: string
+		lineageTag: 84f6191b-b8e0-42b0-942c-37df33f3b790
+		dataCategory: City
+		summarizeBy: none
+		sourceColumn: City
+
+		annotation SummarizationSetBy = User
+
+	column State
+		dataType: string
+		lineageTag: 6e734367-5002-4763-acec-f408b3ab2074
+		dataCategory: StateOrProvince
+		summarizeBy: none
+		sourceColumn: State
+
+		annotation SummarizationSetBy = User
+
+	column Country
+		dataType: string
+		lineageTag: 89133c4b-2104-4395-a04e-8338c3766c53
+		dataCategory: Country
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = User
+
+	/// Sales market: APAC, Africa, Canada, EMEA, EU, LATAM, US.
+	column Market
+		dataType: string
+		lineageTag: 5c365510-ff26-4186-9cd1-5a97e42218ac
+		summarizeBy: none
+		sourceColumn: Market
+
+		annotation SummarizationSetBy = User
+
+	/// Higher-level market rollup (source column Market2): APAC, Africa, EMEA, EU, LATAM, North America.
+	column 'Market Group'
+		dataType: string
+		lineageTag: 65bbfcc1-5337-4703-bab6-171935baff86
+		summarizeBy: none
+		sourceColumn: Market Group
+
+		annotation SummarizationSetBy = User
+
+	/// Geographic region (13 values, e.g. West, EMEA, North Asia). Drives the Region slicer.
+	column Region
+		dataType: string
+		lineageTag: 9b877bb8-5fc0-4300-bf95-d7d90fb3f365
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = User
+
+	column 'Product ID'
+		dataType: string
+		lineageTag: 83d190dd-f1b1-4823-9c1c-983a8eabbc67
+		summarizeBy: none
+		sourceColumn: Product ID
+
+		annotation SummarizationSetBy = User
+
+	/// Top-level product category: Furniture, Office Supplies, Technology.
+	column Category
+		dataType: string
+		lineageTag: 3b21f54b-d069-4cdf-b888-dc3c15462c74
+		summarizeBy: none
+		sourceColumn: Category
+
+		annotation SummarizationSetBy = User
+
+	/// Product sub-category (source column Sub.Category).
+	column Sub-Category
+		dataType: string
+		lineageTag: 29260203-d396-48cd-a5e3-9e2f0ef8e7b0
+		summarizeBy: none
+		sourceColumn: Sub-Category
+
+		annotation SummarizationSetBy = User
+
+	column 'Product Name'
+		dataType: string
+		lineageTag: 02525ef7-1d82-44eb-adc3-217c1dde7236
+		summarizeBy: none
+		sourceColumn: Product Name
+
+		annotation SummarizationSetBy = User
+
+	/// Line revenue. Feeds [Total Sales] and the RFM Monetary value.
+	column Sales
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 664ed434-a45d-4b84-8210-46a81898ff82
+		summarizeBy: sum
+		sourceColumn: Sales
+
+		annotation SummarizationSetBy = User
+
+	column Quantity
+		dataType: int64
+		formatString: #,0
+		lineageTag: 8dd3da98-9c96-4584-ad01-cdcdf50b6e3c
+		summarizeBy: sum
+		sourceColumn: Quantity
+
+		annotation SummarizationSetBy = User
+
+	/// Discount applied to the line, 0 to 0.85.
+	column Discount
+		dataType: double
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: dc2beae6-0097-4f1e-9076-6fcb8fae7444
+		summarizeBy: average
+		sourceColumn: Discount
+
+		annotation SummarizationSetBy = User
+
+	/// Line profit. Can be negative on heavily discounted lines.
+	column Profit
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 6c9278a3-d524-489d-94ca-fa7bc0b04ecc
+		summarizeBy: sum
+		sourceColumn: Profit
+
+		annotation SummarizationSetBy = User
+
+	column 'Shipping Cost'
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 8e52b1db-cfcd-4a85-b06f-98a351802792
+		summarizeBy: sum
+		sourceColumn: Shipping Cost
+
+		annotation SummarizationSetBy = User
+
+	/// Year of the order as supplied in the source file. Use 'Calendar'[Year] for time intelligence.
+	column 'Order Year'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 75801681-59e7-4a88-9b7c-f8f777b6778f
+		summarizeBy: none
+		sourceColumn: Order Year
+
+		annotation SummarizationSetBy = User
+
+	/// ISO week number as supplied in the source file (source column weeknum).
+	column 'Order Week'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 8c7b10e1-c4e0-4a91-9f12-39609e251846
+		summarizeBy: none
+		sourceColumn: Order Week
+
+		annotation SummarizationSetBy = User
+
+	partition Orders = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(
+				        File.Contents(SourceFolder & "\superstore.csv"),
+				        [Delimiter = ",", Columns = 27, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    // Keeps the 26 useful columns and silently drops the source's constant-1 record-count
+				    // column, whose header is non-ASCII and awkward to reference by name.
+				    #"Selected Columns" = Table.SelectColumns(#"Promoted Headers", {
+				        "Row.ID", "Order.ID", "Order.Date", "Ship.Date", "Ship.Mode", "Order.Priority",
+				        "Customer.ID", "Customer.Name", "Segment", "City", "State", "Country",
+				        "Market", "Market2", "Region", "Product.ID", "Category", "Sub.Category",
+				        "Product.Name", "Sales", "Quantity", "Discount", "Profit", "Shipping.Cost",
+				        "Year", "weeknum"
+				    }),
+				    // Dots out, spaces in - Customer.ID -> Customer ID, Sub.Category -> Sub-Category, etc.
+				    #"Renamed Columns" = Table.RenameColumns(#"Selected Columns", {
+				        {"Row.ID", "Row ID"},
+				        {"Order.ID", "Order ID"},
+				        {"Order.Date", "Order Date"},
+				        {"Ship.Date", "Ship Date"},
+				        {"Ship.Mode", "Ship Mode"},
+				        {"Order.Priority", "Order Priority"},
+				        {"Customer.ID", "Customer ID"},
+				        {"Customer.Name", "Customer Name"},
+				        {"Product.ID", "Product ID"},
+				        {"Sub.Category", "Sub-Category"},
+				        {"Product.Name", "Product Name"},
+				        {"Shipping.Cost", "Shipping Cost"},
+				        {"Market2", "Market Group"},
+				        {"Year", "Order Year"},
+				        {"weeknum", "Order Week"}
+				    }),
+				    #"Trimmed Text" = Table.TransformColumns(#"Renamed Columns", {
+				        {"Customer ID", Text.Trim, type text},
+				        {"Order ID", Text.Trim, type text}
+				    }),
+				    // The file uses ISO timestamps ("2011-01-07 00:00:00.000") and "." as the decimal
+				    // separator, so the en-US culture argument is required under the model's tr-TR
+				    // sourceQueryCulture - without it dates and decimals are misread.
+				    #"Changed Type" = Table.TransformColumnTypes(#"Trimmed Text", {
+				        {"Row ID", Int64.Type},
+				        {"Order ID", type text},
+				        {"Order Date", type datetime},
+				        {"Ship Date", type datetime},
+				        {"Ship Mode", type text},
+				        {"Order Priority", type text},
+				        {"Customer ID", type text},
+				        {"Customer Name", type text},
+				        {"Segment", type text},
+				        {"City", type text},
+				        {"State", type text},
+				        {"Country", type text},
+				        {"Market", type text},
+				        {"Market Group", type text},
+				        {"Region", type text},
+				        {"Product ID", type text},
+				        {"Category", type text},
+				        {"Sub-Category", type text},
+				        {"Product Name", type text},
+				        {"Sales", Currency.Type},
+				        {"Quantity", Int64.Type},
+				        {"Discount", type number},
+				        {"Profit", Currency.Type},
+				        {"Shipping Cost", Currency.Type},
+				        {"Order Year", Int64.Type},
+				        {"Order Week", Int64.Type}
+				    }, "en-US"),
+				    // Timestamps are all midnight, so drop the time part and store true dates.
+				    #"Date Only" = Table.TransformColumnTypes(#"Changed Type", {
+				        {"Order Date", type date},
+				        {"Ship Date", type date}
+				    })
+				in
+				    #"Date Only"
+
+	annotation PBI_ResultType = Table
+

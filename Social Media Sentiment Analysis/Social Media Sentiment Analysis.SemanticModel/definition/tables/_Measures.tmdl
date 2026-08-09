@@ -1,0 +1,67 @@
+table _Measures
+	lineageTag: 91ccd9ed-e4ec-4306-b496-90100dd6ae02
+
+	measure 'Total Posts' = COUNTROWS(FactSocialSentiment)
+		formatString: #,0
+		lineageTag: 60fd7d1c-5107-4eb5-a43d-d300830e9430
+
+	measure 'Positive Posts' = CALCULATE([Total Posts], LOWER(FactSocialSentiment[sentiment]) = "positive")
+		formatString: #,0
+		lineageTag: 5669b1a1-150c-484c-b2bd-a535e9973c55
+
+	measure 'Negative Posts' = CALCULATE([Total Posts], LOWER(FactSocialSentiment[sentiment]) = "negative")
+		formatString: #,0
+		lineageTag: b1469270-a6fd-4039-a576-61c0f71d85f2
+
+	measure 'Neutral Posts' = CALCULATE([Total Posts], LOWER(FactSocialSentiment[sentiment]) = "neutral")
+		formatString: #,0
+		lineageTag: 57b2eaca-45ae-4c30-a0c0-79451e4ae57d
+
+	measure '% Positive' = DIVIDE([Positive Posts], [Total Posts], 0)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 594cd868-0504-4d93-9cd9-2e6fb2a53ac9
+
+	measure '% Negative' = DIVIDE([Negative Posts], [Total Posts], 0)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 3173a94e-b31a-496e-a281-ae4b1f70bad0
+
+	measure '% Neutral' = DIVIDE([Neutral Posts], [Total Posts], 0)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 408aea7a-b352-4713-a721-b65192acb2e0
+
+	measure 'Net Sentiment Score' = [% Positive] - [% Negative]
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 8d2c301e-9f61-40b5-9320-d36abb697075
+
+	measure 'High Risk Alert Tag' = IF([% Negative] > 0.35, "High Negative Risk", "Normal")
+		lineageTag: e2739e8a-9f84-4ab8-9692-74afa830438e
+
+	measure 'Negative Posts (Top 10 Countries)' =
+			VAR CountryRank =
+				RANKX(
+					ALLSELECTED(DimGeography[Country]),
+					[Negative Posts],
+					,
+					DESC,
+					DENSE
+				)
+			VAR NegativeVolume = [Negative Posts]
+			RETURN
+				IF(CountryRank <= 10 && NegativeVolume > 0, NegativeVolume)
+		formatString: #,0
+		lineageTag: e7f8074e-2f7b-46d0-bb7a-dc925f496076
+
+	column Value
+		isHidden
+		lineageTag: 27dc1356-02a8-4cb5-8036-b65cc84e0c44
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source = {BLANK()}
+
+	annotation PBI_Id = 4f2a91c7e6d8452bb0a3c5d719fe8e04

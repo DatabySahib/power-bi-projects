@@ -1,0 +1,101 @@
+table _Measures
+	lineageTag: 131fd72a-5766-438e-a239-f8656dd55661
+
+	measure 'Total Revenue' = SUM( FactTransactions[TransactionAmount] )
+		formatString: \$#,##0
+		displayFolder: 01 Base Metrics
+		lineageTag: 21b7917c-caac-494f-9ca2-1126258d5464
+
+	measure 'Total Orders' = COUNT( FactTransactions[OrderID] )
+		formatString: #,##0
+		displayFolder: 01 Base Metrics
+		lineageTag: ce63958f-4617-4a94-ba59-45c4e6e261b2
+
+	measure 'Total Customers' = DISTINCTCOUNT( FactTransactions[CustomerID] )
+		formatString: #,##0
+		displayFolder: 01 Base Metrics
+		lineageTag: 3bb04b70-2141-44cf-afaf-e838c0b7a9c9
+
+	measure 'Average Order Value (AOV)' = DIVIDE( [Total Revenue], [Total Orders], 0 )
+		formatString: \$#,##0.00
+		displayFolder: 01 Base Metrics
+		lineageTag: 6c8dff15-a748-4e12-912a-833da6f317b6
+
+	measure 'Purchase Frequency' = DIVIDE( [Total Orders], [Total Customers], 0 )
+		formatString: #,##0.00
+		displayFolder: 02 Customer Behavior
+		lineageTag: d8ebc769-8695-4579-b495-2d87526cf432
+
+	measure 'Repeat Customers Count' =
+			CALCULATE(
+				[Total Customers],
+				FILTER(
+					VALUES( FactTransactions[CustomerID] ),
+					CALCULATE( COUNT( FactTransactions[OrderID] ) ) > 1
+				)
+			)
+		formatString: #,##0
+		displayFolder: 02 Customer Behavior
+		lineageTag: 85ca22c2-3404-477b-bfed-2ed20f58d32d
+
+	measure 'Repeat Purchase Rate' = DIVIDE( [Repeat Customers Count], [Total Customers], 0 )
+		formatString: 0.0%
+		displayFolder: 02 Customer Behavior
+		lineageTag: ce588325-3403-4ca6-9cff-54979a1dd44c
+
+	measure 'Average Customer Lifespan (Days)' =
+			AVERAGEX(
+				VALUES( DimCustomer[CustomerID] ),
+				DATEDIFF(
+					MIN( FactTransactions[PurchaseDate] ),
+					MAX( FactTransactions[PurchaseDate] ),
+					DAY
+				)
+			)
+		formatString: #,##0.0
+		displayFolder: 02 Customer Behavior
+		lineageTag: 5650c8b7-f310-4c16-b948-75da757b4631
+
+	measure 'Historic CLV' = [Average Order Value (AOV)] * [Purchase Frequency]
+		formatString: \$#,##0.00
+		displayFolder: 03 CLV
+		lineageTag: d41beb50-a19f-48d8-b922-f06e409d57a9
+
+	measure 'Customer Value' = [Total Revenue]
+		formatString: \$#,##0
+		displayFolder: 03 CLV
+		lineageTag: 64065df7-5793-4301-8c8e-c77d4bedeca0
+
+	measure 'Average Historical CLV' =
+			AVERAGEX(
+				VALUES( DimCustomer[CustomerID] ),
+				CALCULATE( SUM( FactTransactions[TransactionAmount] ) )
+			)
+		formatString: \$#,##0.00
+		displayFolder: 03 CLV
+		lineageTag: e64ebaf9-eb64-4632-9457-fad373db217c
+
+	measure 'Revenue % of Total' =
+			DIVIDE(
+				[Total Revenue],
+				CALCULATE( [Total Revenue], REMOVEFILTERS( DimCustomer ) ),
+				0
+			)
+		formatString: 0.0%
+		displayFolder: 03 CLV
+		lineageTag: 5a7434d6-c57f-466b-81f2-cbc372945628
+
+	column Value
+		isHidden
+		formatString: 0
+		lineageTag: c5cc8254-7a22-4d84-a4ba-467d506d2bbf
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source = {0}
+

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "Customer Segmentation Analysis"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "b742dfa0-ab26-4cd1-a6e6-c70e1a66fad8"
+  }
+}

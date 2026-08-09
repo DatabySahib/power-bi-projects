@@ -1,0 +1,101 @@
+/// Product dimension (77 rows). Grain: one row per product.
+table products
+	lineageTag: 236b39fa-bc5b-4da8-b1f1-d7cc2a2042c4
+
+	/// Primary key. Joins to order_details[product_id].
+	column product_id
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: a75f97ac-036a-4732-b3c7-f5daf1bc0b8a
+		summarizeBy: none
+		sourceColumn: product_id
+
+		annotation SummarizationSetBy = User
+
+	/// Product display name.
+	column product_name
+		dataType: string
+		lineageTag: 83704d91-2048-45ed-a83d-515ecf9ac75e
+		summarizeBy: none
+		sourceColumn: product_name
+
+		annotation SummarizationSetBy = User
+
+	/// Packaging description, e.g. '24 - 12 oz bottles'.
+	column quantity_per_unit
+		dataType: string
+		lineageTag: 94ad1735-87e5-46b5-a630-6f5b0031e5e1
+		summarizeBy: none
+		sourceColumn: quantity_per_unit
+
+		annotation SummarizationSetBy = User
+
+	/// Current list price. Historical prices live on order_details[unit_price].
+	column unit_price
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: a7cec821-bd96-4308-a95d-fa3290a4cbfd
+		summarizeBy: none
+		sourceColumn: unit_price
+
+		annotation SummarizationSetBy = User
+
+	/// TRUE when the product is no longer sold.
+	column discontinued
+		dataType: boolean
+		lineageTag: 514ec03e-8eee-45a9-9709-a6a0da94b308
+		summarizeBy: none
+		sourceColumn: discontinued
+
+		annotation SummarizationSetBy = User
+
+	/// Foreign key to categories[category_id].
+	column category_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 2c719bc4-24fe-4847-932b-9f97ffb284f9
+		summarizeBy: none
+		sourceColumn: category_id
+
+		annotation SummarizationSetBy = User
+
+	partition products = m
+		mode: import
+		source =
+				let
+				    // products.csv is Windows-1252 encoded; declare the codepage explicitly.
+				    Source = Csv.Document(
+				        File.Contents(NorthwindFolder & "\products.csv"),
+				        [Delimiter = ",", Columns = 6, Encoding = 1252, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers", {
+				        {"productID", "product_id"},
+				        {"productName", "product_name"},
+				        {"quantityPerUnit", "quantity_per_unit"},
+				        {"unitPrice", "unit_price"},
+				        {"discontinued", "discontinued"},
+				        {"categoryID", "category_id"}
+				    }),
+				    #"Trimmed Text" = Table.TransformColumns(#"Renamed Columns", {
+				        {"product_name", Text.Trim, type text},
+				        {"quantity_per_unit", Text.Trim, type text}
+				    }),
+				    #"Blanks To Null" = Table.ReplaceValue(#"Trimmed Text", "", null, Replacer.ReplaceValue, {
+				        "product_name", "quantity_per_unit", "unit_price", "discontinued", "category_id"
+				    }),
+				    // 0/1 flag -> a genuine boolean, so it slices correctly instead of summing
+				    #"Converted Discontinued" = Table.TransformColumns(#"Blanks To Null", {
+				        {"discontinued", each if _ = null then null else _ = "1", type logical}
+				    }),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Converted Discontinued", {
+				        {"product_id", Int64.Type},
+				        {"product_name", type text},
+				        {"quantity_per_unit", type text},
+				        {"unit_price", Currency.Type},
+				        {"category_id", Int64.Type}
+				    }, "en-US")
+				in
+				    #"Changed Type"
+

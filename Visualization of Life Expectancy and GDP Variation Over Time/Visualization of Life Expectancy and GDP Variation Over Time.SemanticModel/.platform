@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "Visualization of Life Expectancy and GDP Variation Over Time"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "70577985-f1ae-466e-beb9-c32324a00d07"
+  }
+}

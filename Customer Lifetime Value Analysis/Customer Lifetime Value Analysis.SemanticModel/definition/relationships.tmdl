@@ -1,0 +1,8 @@
+relationship DimDate_FactTransactions
+	fromColumn: FactTransactions.PurchaseDate
+	toColumn: DimDate.Date
+
+relationship DimCustomer_FactTransactions
+	fromColumn: FactTransactions.CustomerID
+	toColumn: DimCustomer.CustomerID
+

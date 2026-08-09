@@ -1,0 +1,50 @@
+table _Measures
+	lineageTag: 1f441045-1e07-4a20-81ad-2ce581b2189c
+
+	measure 'Total Employees' = COUNT('HR_Data'[Employee Number])
+		formatString: #,0
+		lineageTag: 0337b12a-3fcf-451e-9674-fdb6f48e27a4
+
+	measure 'Active Employees' = CALCULATE(COUNT('HR_Data'[Employee Number]), 'HR_Data'[Attrition] = "No")
+		formatString: #,0
+		lineageTag: bf01d8b3-5322-4503-b5ad-b6635c2493a1
+
+	measure 'Attrition Count' = CALCULATE(COUNT('HR_Data'[Employee Number]), 'HR_Data'[Attrition] = "Yes")
+		formatString: #,0
+		lineageTag: 4550c3b1-618c-4b22-9d72-1ce11e93bbd2
+
+	measure 'Attrition Rate' = DIVIDE([Attrition Count], [Total Employees], 0)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 195e17dd-45e2-4e76-a706-dfe2d3889e49
+
+	measure 'Avg Monthly Income' = AVERAGE('HR_Data'[Monthly Income])
+		formatString: \$#,0
+		lineageTag: 5947ae13-38bb-436e-ae36-447551739ac6
+
+	measure 'Avg Years at Company' = AVERAGE('HR_Data'[Years At Company])
+		formatString: 0.0
+		lineageTag: e5163df4-c158-4ad7-96db-30ac3eeb9d8e
+
+	measure 'Avg Age' = AVERAGE('HR_Data'[Age])
+		formatString: 0.0
+		lineageTag: 524caca0-1f23-4155-848f-2a697401a888
+
+	measure 'Avg Years Since Last Promotion' = AVERAGE('HR_Data'[Years Since Last Promotion])
+		formatString: 0.0
+		lineageTag: 4189a2d5-e0fb-408e-b9b4-50c148fb1348
+
+	column Value
+		isHidden
+		lineageTag: 9a0206af-9b77-42e0-ae3f-bee80ca4598b
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source = {BLANK()}
+
+	annotation PBI_Id = bf0953680cdb457cae6cddbe4be8172c
+

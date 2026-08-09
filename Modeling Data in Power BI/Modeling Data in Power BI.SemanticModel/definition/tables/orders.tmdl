@@ -1,0 +1,132 @@
+/// Fact table at order-header grain (830 rows). One row per order.
+table orders
+	lineageTag: 0cd51543-3fdf-41be-bfe7-532d8647c058
+
+	/// Primary key of the order header. Joins to order_details[order_id].
+	column order_id
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: 00738fbc-31f6-4c01-982f-ed09dd67ca4d
+		summarizeBy: none
+		sourceColumn: order_id
+
+		annotation SummarizationSetBy = User
+
+	/// Foreign key to customers[customer_id].
+	column customer_id
+		dataType: string
+		lineageTag: 4c9d31cb-55a9-4239-aa2a-749b18d785bc
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = User
+
+	/// Foreign key to employees[employee_id].
+	column employee_id
+		dataType: int64
+		formatString: 0
+		lineageTag: 9937ad87-5eb5-462e-ac74-12fd007d6ed8
+		summarizeBy: none
+		sourceColumn: employee_id
+
+		annotation SummarizationSetBy = User
+
+	/// Date the order was placed.
+	column order_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: be8f6b4d-d232-48f8-9087-fdc36537e375
+		summarizeBy: none
+		sourceColumn: order_date
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Date the customer required delivery by.
+	column required_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 8bdb579c-1803-4611-a996-a462f65d5d85
+		summarizeBy: none
+		sourceColumn: required_date
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Date the order shipped. Null for the 21 orders never shipped.
+	column shipped_date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 333eaff0-af55-45bc-b4bb-781d08b34fad
+		summarizeBy: none
+		sourceColumn: shipped_date
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Foreign key to shippers[shipper_id].
+	column shipper_id
+		dataType: int64
+		formatString: 0
+		lineageTag: c3a5e7a9-3574-4df7-8285-cc0da186e0c4
+		summarizeBy: none
+		sourceColumn: shipper_id
+
+		annotation SummarizationSetBy = User
+
+	/// Freight charged on the order. Header-level, not part of line revenue.
+	column freight
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: e723a254-ae78-4faf-8b5e-ebde2bc3e92b
+		summarizeBy: sum
+		sourceColumn: freight
+
+		annotation SummarizationSetBy = User
+
+	partition orders = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(
+				        File.Contents(NorthwindFolder & "\orders.csv"),
+				        [Delimiter = ",", Columns = 8, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers", {
+				        {"orderID", "order_id"},
+				        {"customerID", "customer_id"},
+				        {"employeeID", "employee_id"},
+				        {"orderDate", "order_date"},
+				        {"requiredDate", "required_date"},
+				        {"shippedDate", "shipped_date"},
+				        {"shipperID", "shipper_id"},
+				        {"freight", "freight"}
+				    }),
+				    #"Trimmed Text" = Table.TransformColumns(#"Renamed Columns", {
+				        {"customer_id", Text.Trim, type text}
+				    }),
+				    // 21 orders have never shipped -> blank shipped_date becomes null rather than
+				    // an error row, and stays excluded from date-based aggregations.
+				    #"Blanks To Null" = Table.ReplaceValue(#"Trimmed Text", "", null, Replacer.ReplaceValue, {
+				        "customer_id", "employee_id", "order_date", "required_date", "shipped_date", "shipper_id", "freight"
+				    }),
+				    // Dates are ISO yyyy-MM-dd and freight uses "." as the decimal separator, so the
+				    // en-US culture argument is required under the model's tr-TR query culture.
+				    #"Changed Type" = Table.TransformColumnTypes(#"Blanks To Null", {
+				        {"order_id", Int64.Type},
+				        {"customer_id", type text},
+				        {"employee_id", Int64.Type},
+				        {"order_date", type date},
+				        {"required_date", type date},
+				        {"shipped_date", type date},
+				        {"shipper_id", Int64.Type},
+				        {"freight", Currency.Type}
+				    }, "en-US")
+				in
+				    #"Changed Type"
+

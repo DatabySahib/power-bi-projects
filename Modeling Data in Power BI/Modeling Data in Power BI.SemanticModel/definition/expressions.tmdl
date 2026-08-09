@@ -1,0 +1,6 @@
+/// Root folder holding the Northwind Traders CSV extracts. Change this one value to repoint the whole model.
+expression NorthwindFolder = "C:\Users\Zenbook\Desktop\Northwind Traders" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: cf317ac5-5e0b-4aee-bdfb-72475cef8689
+
+	annotation PBI_ResultType = Text
+

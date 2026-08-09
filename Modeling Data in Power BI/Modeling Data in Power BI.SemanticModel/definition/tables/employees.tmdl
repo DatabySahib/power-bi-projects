@@ -1,0 +1,100 @@
+/// Employee dimension (9 rows). Grain: one row per employee.
+table employees
+	lineageTag: 4debd227-9aa5-45e1-8b30-1f098010696a
+
+	/// Primary key. Joins to orders[employee_id].
+	column employee_id
+		dataType: int64
+		isKey
+		formatString: 0
+		lineageTag: 36e759d2-befa-4cc8-915e-f6129f89bf16
+		summarizeBy: none
+		sourceColumn: employee_id
+
+		annotation SummarizationSetBy = User
+
+	/// Employee full name.
+	column employee_name
+		dataType: string
+		lineageTag: 915b4a98-e282-4578-b1bc-5a071566f889
+		summarizeBy: none
+		sourceColumn: employee_name
+
+		annotation SummarizationSetBy = User
+
+	/// Job title.
+	column title
+		dataType: string
+		lineageTag: 82bdeb58-ccd6-4490-a573-818a559aff8c
+		summarizeBy: none
+		sourceColumn: title
+
+		annotation SummarizationSetBy = User
+
+	/// Office city.
+	column city
+		dataType: string
+		lineageTag: 086f3445-8d40-4644-b90b-12094c680317
+		summarizeBy: none
+		sourceColumn: city
+
+		annotation SummarizationSetBy = User
+
+	/// Office country.
+	column country
+		dataType: string
+		lineageTag: 2d34ded7-9a0d-4886-8a4c-e0ccc87270b3
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = User
+
+	/// Manager's employee_id. Null for the top of the org chart.
+	column reports_to
+		dataType: int64
+		formatString: 0
+		lineageTag: 0da9b538-b4c0-4290-b1bf-e7066d59777f
+		summarizeBy: none
+		sourceColumn: reports_to
+
+		annotation SummarizationSetBy = User
+
+	partition employees = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(
+				        File.Contents(NorthwindFolder & "\employees.csv"),
+				        [Delimiter = ",", Columns = 6, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers", {
+				        {"employeeID", "employee_id"},
+				        {"employeeName", "employee_name"},
+				        {"title", "title"},
+				        {"city", "city"},
+				        {"country", "country"},
+				        {"reportsTo", "reports_to"}
+				    }),
+				    #"Trimmed Text" = Table.TransformColumns(#"Renamed Columns", {
+				        {"employee_name", Text.Trim, type text},
+				        {"title", Text.Trim, type text},
+				        {"city", Text.Trim, type text},
+				        {"country", Text.Trim, type text}
+				    }),
+				    // reports_to is empty for the top of the org chart -> must become a real null
+				    // before typing, otherwise the Int64 conversion raises an error row.
+				    #"Blanks To Null" = Table.ReplaceValue(#"Trimmed Text", "", null, Replacer.ReplaceValue, {
+				        "employee_name", "title", "city", "country", "reports_to"
+				    }),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Blanks To Null", {
+				        {"employee_id", Int64.Type},
+				        {"employee_name", type text},
+				        {"title", type text},
+				        {"city", type text},
+				        {"country", type text},
+				        {"reports_to", Int64.Type}
+				    }, "en-US")
+				in
+				    #"Changed Type"
+

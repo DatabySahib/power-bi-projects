@@ -1,0 +1,24 @@
+relationship 7e84bfc2-a699-4c50-a172-34b25098fef2
+	fromColumn: orders.customer_id
+	toColumn: customers.customer_id
+
+relationship 836f43d5-465a-4fdb-b87d-a02ac1c9fadb
+	fromColumn: orders.employee_id
+	toColumn: employees.employee_id
+
+relationship 044f407f-46e7-4aa0-8a5a-1caa989f641b
+	fromColumn: orders.shipper_id
+	toColumn: shippers.shipper_id
+
+relationship c3d08cc1-7ecf-4dc2-ba03-8a85d1a82a57
+	fromColumn: order_details.order_id
+	toColumn: orders.order_id
+
+relationship 52d33bbe-55b2-4bb4-ae3b-ea14ba889df7
+	fromColumn: order_details.product_id
+	toColumn: products.product_id
+
+relationship f27374c2-bcf6-4d34-87ed-e521b09d95f1
+	fromColumn: products.category_id
+	toColumn: categories.category_id
+

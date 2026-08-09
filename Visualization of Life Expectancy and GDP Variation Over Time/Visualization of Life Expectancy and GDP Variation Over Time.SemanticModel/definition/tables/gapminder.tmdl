@@ -1,0 +1,91 @@
+/// Gapminder World indicators, 1952-2007 in 5-year steps. Grain: one row per country per year (142 countries x 12 years = 1704 rows).
+table gapminder
+	lineageTag: 55c9a62e-1af2-489c-9f14-3c8d4b675aa7
+
+	/// Country name. 142 distinct values, stable across all 12 years.
+	column country
+		dataType: string
+		lineageTag: c83dddf7-e968-4fbf-9219-4d1349ef7a9f
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = User
+
+	/// Observation year. Discrete 5-year steps: 1952, 1957, ... 2007. Never aggregated - used as the scatter play axis.
+	column year
+		dataType: int64
+		formatString: 0
+		lineageTag: 75db91b9-6dda-4372-9dad-d44b10861650
+		summarizeBy: none
+		sourceColumn: year
+
+		annotation SummarizationSetBy = User
+
+	/// Total population of the country in that year.
+	column population
+		dataType: int64
+		formatString: #,0
+		lineageTag: afabd9ed-68ea-4556-a1de-602cb78e8d71
+		summarizeBy: sum
+		sourceColumn: population
+
+		annotation SummarizationSetBy = User
+
+	/// Region: Africa, Americas, Asia, Europe, Oceania. Used as the scatter colour legend.
+	column continent
+		dataType: string
+		lineageTag: f9cd7dea-a096-4d6f-8553-923b8f1beaef
+		summarizeBy: none
+		sourceColumn: continent
+
+		annotation SummarizationSetBy = User
+
+	/// Life expectancy at birth, in years. Range 23.6 - 82.6.
+	column life_exp
+		dataType: double
+		formatString: 0.0
+		lineageTag: 207327fd-0850-42b1-b427-85486fe4fc9e
+		summarizeBy: none
+		sourceColumn: life_exp
+
+		annotation SummarizationSetBy = User
+
+	/// GDP per capita in inflation-adjusted international dollars. Range 241 - 113,523. Plotted on a log X axis.
+	column gdp_cap
+		dataType: double
+		formatString: \$#,0
+		lineageTag: 70d19b07-bdc2-411b-a870-b440bd791edf
+		summarizeBy: none
+		sourceColumn: gdp_cap
+
+		annotation SummarizationSetBy = User
+
+	partition gapminder = m
+		mode: import
+		source =
+				let
+				    // gapminder_full.csv is pure ASCII with no BOM -> UTF-8 read is safe.
+				    Source = Csv.Document(
+				        File.Contents(GapminderFolder & "\gapminder_full.csv"),
+				        [Delimiter = ",", Columns = 6, Encoding = 65001, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Trimmed Text" = Table.TransformColumns(#"Promoted Headers", {
+				        {"country", Text.Trim, type text},
+				        {"continent", Text.Trim, type text}
+				    }),
+				    // Culture pinned to en-US: the model's sourceQueryCulture is tr-TR, where "." is a
+				    // thousands separator. Without this, gdp_cap "779.4453145" parses as 7794453145.
+				    #"Changed Type" = Table.TransformColumnTypes(#"Trimmed Text", {
+				        {"country", type text},
+				        {"year", Int64.Type},
+				        {"population", Int64.Type},
+				        {"continent", type text},
+				        {"life_exp", type number},
+				        {"gdp_cap", type number}
+				    }, "en-US"),
+				    // Guard against trailing blank lines in the source file.
+				    #"Removed Blank Rows" = Table.SelectRows(#"Changed Type", each [country] <> null and [country] <> "")
+				in
+				    #"Removed Blank Rows"
+

@@ -1,0 +1,108 @@
+table DimCustomer
+	lineageTag: ba0f0a49-9384-4e1a-9758-e156da45c580
+
+	column CustomerID
+		formatString: 0
+		lineageTag: 8b195175-8091-4be5-9964-84c81a95fcf7
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [CustomerID]
+
+		annotation SummarizationSetBy = User
+
+	column 'First Purchase Date'
+		formatString: yyyy-mm-dd
+		lineageTag: c224efce-99e9-4cc5-bee8-924dd1896fc9
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [First Purchase Date]
+
+		annotation SummarizationSetBy = User
+
+	column 'Last Purchase Date'
+		formatString: yyyy-mm-dd
+		lineageTag: cc40f6db-33e5-4493-b57f-3d86baedd12c
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Last Purchase Date]
+
+		annotation SummarizationSetBy = User
+
+	column Location
+		lineageTag: 4e2bcf9f-2b8c-419f-8d21-87a931ca3a02
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Location]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Customer Revenue'
+		isHidden
+		formatString: \$#,##0.00
+		lineageTag: 1b7b2912-f7b6-49c4-b29a-f87b33cefcfd
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Customer Revenue]
+
+		annotation SummarizationSetBy = User
+
+	column 'Customer Order Count'
+		isHidden
+		formatString: 0
+		lineageTag: 51d4eae3-2152-4f7d-97e0-604750e86384
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Customer Order Count]
+
+		annotation SummarizationSetBy = User
+
+	column 'Customer Segment' =
+			SWITCH(
+				TRUE(),
+				DimCustomer[Customer Revenue] >= 800, "High Value",
+				DimCustomer[Customer Revenue] >= 400, "Medium Value",
+				"Low Value"
+			)
+		dataType: string
+		lineageTag: d963a432-e0fa-46c4-8a30-5102e95c2d0b
+		summarizeBy: none
+		sortByColumn: 'Customer Segment Sort'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Customer Segment Sort' =
+			SWITCH(
+				TRUE(),
+				DimCustomer[Customer Revenue] >= 800, 1,
+				DimCustomer[Customer Revenue] >= 400, 2,
+				3
+			)
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: f43ec018-a5ac-4954-9d6e-23d1ce65dec6
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimCustomer = calculated
+		mode: import
+		source =
+				VAR CustomerKeys =
+					SUMMARIZE( FactTransactions, FactTransactions[CustomerID] )
+				RETURN
+					ADDCOLUMNS(
+						CustomerKeys,
+						"First Purchase Date", CALCULATE( MIN( FactTransactions[PurchaseDate] ) ),
+						"Last Purchase Date", CALCULATE( MAX( FactTransactions[PurchaseDate] ) ),
+						"Location",
+							VAR FirstDate = CALCULATE( MIN( FactTransactions[PurchaseDate] ) )
+							RETURN
+								CALCULATE(
+									MIN( FactTransactions[Location] ),
+									FactTransactions[PurchaseDate] = FirstDate
+								),
+						"Customer Revenue", CALCULATE( SUM( FactTransactions[TransactionAmount] ) ),
+						"Customer Order Count", CALCULATE( COUNT( FactTransactions[OrderID] ) )
+					)
+

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "Customer Lifetime Value Analysis"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "59821e4e-4094-40e3-aa32-b93f57b3e440"
+  }
+}

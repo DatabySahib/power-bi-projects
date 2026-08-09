@@ -1,0 +1,9 @@
+# Large data files that exceed GitHub's 100 MB hard limit
+training.1600000.csv
+
+# Archives (keep source data as plain files, not zips)
+*.zip
+
+# Power BI local-only artifacts
+**/.pbi/localSettings.json
+**/.pbi/cache.abf

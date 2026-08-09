@@ -1,0 +1,306 @@
+/// Customer dimension at Customer ID grain (4,873 rows), derived from 'Orders'.
+/// Holds the snapshot RFM profile of every customer: Recency / Frequency / Monetary, their
+/// 1-5 quintile scores, the combined RFM Score string, and the business segment.
+/// The snapshot date is the latest order date in the whole dataset (2014-12-31), so segment
+/// assignment is stable and does not shift when report slicers change.
+/// Every column is produced by the partition expression below. The table deliberately has no
+/// calculated columns: [RFM Segment] is sorted by [Segment Order], and sortByColumn counts as a
+/// dependency edge, so a calculated [Segment Order] that read [RFM Segment] would close a
+/// circular reference between the two.
+table 'Customer RFM'
+	lineageTag: 8130601c-22d1-4112-81cf-ef4d0e1912b4
+
+	/// Customer key. One row per customer; joins one-to-many to 'Orders'[Customer ID].
+	column 'Customer ID'
+		dataType: string
+		isKey
+		lineageTag: e05417fd-fc5a-4dea-acca-b001e97ae2ce
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Customer ID]
+
+		annotation SummarizationSetBy = User
+
+	column 'Customer Name'
+		dataType: string
+		lineageTag: 029e3002-6da9-48e4-98e0-9874fc9896f5
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Customer Name]
+
+		annotation SummarizationSetBy = User
+
+	/// Source business segment (Consumer / Corporate / Home Office), carried over from 'Orders'[Segment].
+	column 'Customer Segment'
+		dataType: string
+		lineageTag: 02600032-78e9-4fbb-93dd-bd642d424e2a
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Customer Segment]
+
+		annotation SummarizationSetBy = User
+
+	/// Most recent order date for this customer across the whole dataset.
+	column 'Last Order Date'
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 704ce861-5eb0-410b-9cd1-0f7bffbc69dc
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Last Order Date]
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// R of RFM: days between the customer's last order and the 2014-12-31 snapshot. Lower is better.
+	column 'Recency Days'
+		dataType: int64
+		formatString: #,0
+		lineageTag: d37f4aa3-aa75-4049-9dc0-bcf82e2c1726
+		summarizeBy: average
+		isNameInferred
+		sourceColumn: [Recency Days]
+
+		annotation SummarizationSetBy = User
+
+	/// F of RFM: distinct orders placed by the customer. Higher is better.
+	column Frequency
+		dataType: int64
+		formatString: #,0
+		lineageTag: c8aed9f6-25cf-4acb-bd4a-857d7ca2a6e1
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Frequency]
+
+		annotation SummarizationSetBy = User
+
+	/// M of RFM: lifetime sales value of the customer. Higher is better.
+	column Monetary
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: efdc53f0-a523-4884-b2f1-45d1d7fa4b5e
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Monetary]
+
+		annotation SummarizationSetBy = User
+
+	/// Lifetime profit contributed by the customer.
+	column 'Lifetime Profit'
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 8f2d43a2-cef2-473b-9ed6-089353c0c596
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Lifetime Profit]
+
+		annotation SummarizationSetBy = User
+
+	/// Lifetime units purchased by the customer.
+	column 'Lifetime Units'
+		dataType: int64
+		formatString: #,0
+		lineageTag: 80b8fc31-641b-48cf-be5d-beefaf76b330
+		summarizeBy: sum
+		isNameInferred
+		sourceColumn: [Lifetime Units]
+
+		annotation SummarizationSetBy = User
+
+	/// Monetary divided by Frequency: the customer's own average basket size.
+	column 'Avg Spend per Order'
+		dataType: decimal
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		lineageTag: 329bc6d6-c170-4cb0-a959-80c5537bf2fd
+		summarizeBy: average
+		isNameInferred
+		sourceColumn: [Avg Spend per Order]
+
+		annotation SummarizationSetBy = User
+
+	/// Recency quintile, 1-5. Score 5 = the most recently active 20% of customers, i.e. the
+	/// lowest Recency Days, so the scale is inverted relative to the raw metric.
+	column 'R Score'
+		dataType: int64
+		formatString: 0
+		lineageTag: f66b8ede-90fb-43d6-8eb2-a22f14ff74e0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [R Score]
+
+		annotation SummarizationSetBy = User
+
+	/// Frequency quintile, 1-5. Score 5 = the most frequently ordering 20% of customers.
+	column 'F Score'
+		dataType: int64
+		formatString: 0
+		lineageTag: 2f47ebeb-df51-4781-bebe-3e04de85939f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [F Score]
+
+		annotation SummarizationSetBy = User
+
+	/// Monetary quintile, 1-5. Score 5 = the highest-spending 20% of customers.
+	column 'M Score'
+		dataType: int64
+		formatString: 0
+		lineageTag: 643b1cce-32bc-4f28-b103-77d506f4da3d
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [M Score]
+
+		annotation SummarizationSetBy = User
+
+	/// The three quintile scores concatenated, e.g. "555" for a best-in-class customer.
+	column 'RFM Score'
+		dataType: string
+		lineageTag: ee41f364-629e-4889-953e-5f3d4e65f36e
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [RFM Score]
+
+		annotation SummarizationSetBy = User
+
+	/// Business segment derived from the R, F and M quintile scores.
+	/// The rules are evaluated in priority order, which deliberately differs from the order the
+	/// segments are usually listed in: "At Risk" (R 1-2, F 3-5, M 3-5) is a strict subset of
+	/// "Loyal Customers" (F 3-5, M 3-5), so it has to be tested first or it would never match.
+	/// Anything the five named rules do not catch falls into "Needs Attention".
+	column 'RFM Segment'
+		dataType: string
+		lineageTag: d9011dd9-0d4d-4b11-8dff-58ae6b278eb7
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [RFM Segment]
+		sortByColumn: 'Segment Order'
+
+		annotation SummarizationSetBy = User
+
+	/// Sort key so segments read best-to-worst instead of alphabetically.
+	/// Assigned alongside [RFM Segment] in the partition expression, never derived from it at
+	/// column level, which is what keeps the sortByColumn link above acyclic.
+	column 'Segment Order'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: ed46bf93-3c60-47bd-98c0-f3f99bea0dc2
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Segment Order]
+
+		annotation SummarizationSetBy = User
+
+	partition 'Customer RFM' = calculated
+		mode: import
+		source =
+				VAR SnapshotDate = MAX('Orders'[Order Date])
+				VAR Base =
+				    ADDCOLUMNS(
+				        SUMMARIZE('Orders', 'Orders'[Customer ID], 'Orders'[Customer Name]),
+				        "@Segment", CALCULATE(MIN('Orders'[Segment])),
+				        "@LastOrder", CALCULATE(MAX('Orders'[Order Date])),
+				        "@Frequency", CALCULATE(DISTINCTCOUNT('Orders'[Order ID])),
+				        "@Monetary", CALCULATE(SUM('Orders'[Sales])),
+				        "@Profit", CALCULATE(SUM('Orders'[Profit])),
+				        "@Units", CALCULATE(SUM('Orders'[Quantity]))
+				    )
+				VAR Profiles =
+				    ADDCOLUMNS(
+				        Base,
+				        "@Recency", DATEDIFF([@LastOrder], SnapshotDate, DAY)
+				    )
+				// Quintile cut points, the NTILE equivalent available in DAX. Computed once here
+				// as VARs rather than per row inside calculated columns.
+				VAR R20 = PERCENTILEX.INC(Profiles, [@Recency], 0.20)
+				VAR R40 = PERCENTILEX.INC(Profiles, [@Recency], 0.40)
+				VAR R60 = PERCENTILEX.INC(Profiles, [@Recency], 0.60)
+				VAR R80 = PERCENTILEX.INC(Profiles, [@Recency], 0.80)
+				VAR F20 = PERCENTILEX.INC(Profiles, [@Frequency], 0.20)
+				VAR F40 = PERCENTILEX.INC(Profiles, [@Frequency], 0.40)
+				VAR F60 = PERCENTILEX.INC(Profiles, [@Frequency], 0.60)
+				VAR F80 = PERCENTILEX.INC(Profiles, [@Frequency], 0.80)
+				VAR M20 = PERCENTILEX.INC(Profiles, [@Monetary], 0.20)
+				VAR M40 = PERCENTILEX.INC(Profiles, [@Monetary], 0.40)
+				VAR M60 = PERCENTILEX.INC(Profiles, [@Monetary], 0.60)
+				VAR M80 = PERCENTILEX.INC(Profiles, [@Monetary], 0.80)
+				VAR Scored =
+				    ADDCOLUMNS(
+				        Profiles,
+				        "@R",
+				            SWITCH(
+				                TRUE(),
+				                [@Recency] <= R20, 5,
+				                [@Recency] <= R40, 4,
+				                [@Recency] <= R60, 3,
+				                [@Recency] <= R80, 2,
+				                1
+				            ),
+				        "@F",
+				            SWITCH(
+				                TRUE(),
+				                [@Frequency] <= F20, 1,
+				                [@Frequency] <= F40, 2,
+				                [@Frequency] <= F60, 3,
+				                [@Frequency] <= F80, 4,
+				                5
+				            ),
+				        "@M",
+				            SWITCH(
+				                TRUE(),
+				                [@Monetary] <= M20, 1,
+				                [@Monetary] <= M40, 2,
+				                [@Monetary] <= M60, 3,
+				                [@Monetary] <= M80, 4,
+				                5
+				            )
+				    )
+				// The segment name is resolved once, then the sort key is read off it. Doing both
+				// here keeps the rule set in one place and leaves the two output columns free of
+				// any column-level dependency on each other.
+				VAR Segmented =
+				    ADDCOLUMNS(
+				        Scored,
+				        "@RFMSegment",
+				            SWITCH(
+				                TRUE(),
+				                [@R] >= 4 && [@F] >= 4 && [@M] >= 4, "Champions",
+				                [@R] <= 2 && [@F] >= 3 && [@M] >= 3, "At Risk",
+				                [@F] >= 3 && [@M] >= 3, "Loyal Customers",
+				                [@R] >= 3 && [@F] <= 3, "Potential Loyalists",
+				                [@R] <= 2 && [@F] <= 2 && [@M] <= 2, "Lost / Hibernating",
+				                "Needs Attention"
+				            )
+				    )
+				RETURN
+				    SELECTCOLUMNS(
+				        Segmented,
+				        "Customer ID", 'Orders'[Customer ID],
+				        "Customer Name", 'Orders'[Customer Name],
+				        "Customer Segment", [@Segment],
+				        "Last Order Date", [@LastOrder],
+				        "Recency Days", [@Recency],
+				        "Frequency", [@Frequency],
+				        "Monetary", [@Monetary],
+				        "Lifetime Profit", [@Profit],
+				        "Lifetime Units", [@Units],
+				        "Avg Spend per Order", DIVIDE([@Monetary], [@Frequency]),
+				        "R Score", [@R],
+				        "F Score", [@F],
+				        "M Score", [@M],
+				        "RFM Score", [@R] & [@F] & [@M],
+				        "RFM Segment", [@RFMSegment],
+				        "Segment Order",
+				            SWITCH(
+				                [@RFMSegment],
+				                "Champions", 1,
+				                "Loyal Customers", 2,
+				                "Potential Loyalists", 3,
+				                "Needs Attention", 4,
+				                "At Risk", 5,
+				                "Lost / Hibernating", 6,
+				                7
+				            )
+				    )
+

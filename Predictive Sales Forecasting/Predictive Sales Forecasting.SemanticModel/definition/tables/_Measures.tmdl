@@ -1,0 +1,99 @@
+/// Home for every business measure. The single hidden column exists only to host them, which keeps
+/// the measures out of 'Orders' and gives the field list one obvious place to look.
+/// Measures are grouped into display folders: Base Metrics, Time Intelligence, Target & Variance.
+table _Measures
+	lineageTag: e5d8022b-384b-4e19-8c88-cfd1477f18df
+
+	/// Total revenue in the current filter context.
+	measure 'Total Sales' = SUM('Orders'[Sales])
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Base Metrics
+		lineageTag: 048a001b-271e-49e4-8411-2cca9b57c03a
+
+	/// Total profit in the current filter context. Goes negative for Tables and Bookcases.
+	measure 'Total Profit' = SUM('Orders'[Profit])
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Base Metrics
+		lineageTag: 516ed8b1-1964-4f99-919b-60ac983ec5f5
+
+	/// Units sold in the current filter context.
+	measure 'Total Quantity' = SUM('Orders'[Quantity])
+		formatString: #,0
+		displayFolder: Base Metrics
+		lineageTag: d76d034d-ef30-4899-8883-228b9a4f382f
+
+	/// Revenue per distinct order. Counts order headers, not line items, so a five-line order
+	/// counts once. Returns 0 rather than blank when nothing is in context.
+	measure 'Average Order Value (AOV)' = DIVIDE([Total Sales], DISTINCTCOUNT('Orders'[Order ID]))
+		formatString: \$#,0.00;(\$#,0.00);\$#,0.00
+		displayFolder: Base Metrics
+		lineageTag: 55700b7e-d5dd-4539-acf8-dbda3a37945b
+
+	/// Profit as a share of revenue. Dataset-wide this is 12.5%.
+	measure 'Profit Margin %' = DIVIDE([Total Profit], [Total Sales], 0)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Base Metrics
+		lineageTag: 3703caaa-d37f-42e4-8213-32c77bbac0fa
+
+	/// Same period one year earlier, resolved over the marked date table. Blank for 2014, the
+	/// first year in the calendar, which is why the growth measures below coalesce to 0.
+	measure 'Prior Year Sales' = CALCULATE([Total Sales], SAMEPERIODLASTYEAR('Dim_Date'[Date]))
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Time Intelligence
+		lineageTag: a0dd8bd5-501c-46a9-bd20-63f9a1eb99a7
+
+	/// Absolute year-over-year change in revenue.
+	measure 'YoY Sales Growth $' = [Total Sales] - [Prior Year Sales]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Time Intelligence
+		lineageTag: 3a28a1d4-8dcd-496a-8061-3c541805b6d2
+
+	/// Year-over-year growth rate. 0 where there is no prior year to compare against.
+	measure 'YoY Sales Growth %' = DIVIDE([YoY Sales Growth $], [Prior Year Sales], 0)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Time Intelligence
+		lineageTag: b3aeb077-32c6-428d-a929-d669eafa4ee8
+
+	/// Month-over-month growth rate. The prior month is evaluated once into a variable and reused
+	/// for both the numerator and the denominator.
+	measure 'MoM Sales Growth %' =
+			VAR PriorMonthSales = CALCULATE([Total Sales], DATEADD('Dim_Date'[Date], -1, MONTH))
+			RETURN
+			    DIVIDE([Total Sales] - PriorMonthSales, PriorMonthSales, 0)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Time Intelligence
+		lineageTag: 28bfd3f2-4f9f-4e60-8bcf-d8b9be38c3a2
+
+	/// Target is prior year plus 10% growth. Blank for 2014 because there is no prior year,
+	/// so attainment is reported only from 2015 onward.
+	measure 'Target Sales' = [Prior Year Sales] * 1.10
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Target & Variance
+		lineageTag: ea5603dd-80e4-44f6-8790-f28d88aab69d
+
+	/// Dollars above (positive) or below (negative) the 10% growth target.
+	measure 'Target Variance $' = [Total Sales] - [Target Sales]
+		formatString: \$#,0;(\$#,0);\$#,0
+		displayFolder: Target & Variance
+		lineageTag: 0e9ecf24-3b04-43a0-baa7-10719ced15c0
+
+	/// Revenue as a share of target. 100% means the 10% growth goal was met exactly.
+	measure 'Target Attainment %' = DIVIDE([Total Sales], [Target Sales], 0)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: Target & Variance
+		lineageTag: 25e00961-21dd-4826-8936-c98337891ad0
+
+	column Value
+		dataType: int64
+		isHidden
+		lineageTag: a847ad9a-8c58-416b-9c38-3a5b2e8bc9c0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = calculated
+		mode: import
+		source = {0}
+

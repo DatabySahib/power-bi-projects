@@ -1,0 +1,6 @@
+/// Folder holding the Gapminder CSV extract. Change this one value to repoint the model.
+expression GapminderFolder = "C:\Users\Zenbook\Desktop\Visualization of Life Expectancy and GDP Variation Over Time\data" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: fb0e6051-2771-4446-b58b-ac4647662ac3
+
+	annotation PBI_ResultType = Text
+

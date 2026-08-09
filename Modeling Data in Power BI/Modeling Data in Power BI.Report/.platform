@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "Modeling Data in Power BI"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "240a4b1d-d3a5-4768-9198-73a85c01fea8"
+  }
+}

@@ -1,0 +1,102 @@
+/// Customer dimension (91 rows). Grain: one row per customer.
+table customers
+	lineageTag: ce1e1fbb-fef9-4c1d-a85d-0cabda8f8a7d
+
+	/// Primary key (5-char code). Joins to orders[customer_id].
+	column customer_id
+		dataType: string
+		isKey
+		lineageTag: 4977ef5a-11f8-4dfa-9cc2-4f2a36a22b0b
+		summarizeBy: none
+		sourceColumn: customer_id
+
+		annotation SummarizationSetBy = User
+
+	/// Customer company name.
+	column company_name
+		dataType: string
+		lineageTag: 9497a899-7dd5-4343-9bfa-36ab428b67ac
+		summarizeBy: none
+		sourceColumn: company_name
+
+		changedProperty = IsHidden
+
+		annotation SummarizationSetBy = User
+
+	/// Primary contact person.
+	column contact_name
+		dataType: string
+		lineageTag: ceb03334-b9f2-4e18-acf9-01f2e4bb4b9a
+		summarizeBy: none
+		sourceColumn: contact_name
+
+		annotation SummarizationSetBy = User
+
+	/// Job title of the primary contact.
+	column contact_title
+		dataType: string
+		lineageTag: c389750f-5d66-49b3-b739-bd8d55a5e21b
+		summarizeBy: none
+		sourceColumn: contact_title
+
+		annotation SummarizationSetBy = User
+
+	/// Customer city.
+	column city
+		dataType: string
+		lineageTag: cb44f57a-0409-48f8-824f-321a95e333f7
+		summarizeBy: none
+		sourceColumn: city
+
+		annotation SummarizationSetBy = User
+
+	/// Customer country.
+	column country
+		dataType: string
+		lineageTag: 8df37a8c-d2c0-49a0-8b6c-09c32b9c2be1
+		summarizeBy: none
+		sourceColumn: country
+
+		annotation SummarizationSetBy = User
+
+	partition customers = m
+		mode: import
+		source =
+				let
+				    // customers.csv is Windows-1252 encoded (e.g. "TaquerÃ­a"); reading it as UTF-8
+				    // produces replacement characters, so the codepage is declared explicitly.
+				    Source = Csv.Document(
+				        File.Contents(NorthwindFolder & "\customers.csv"),
+				        [Delimiter = ",", Columns = 6, Encoding = 1252, QuoteStyle = QuoteStyle.Csv]
+				    ),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars = true]),
+				    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers", {
+				        {"customerID", "customer_id"},
+				        {"companyName", "company_name"},
+				        {"contactName", "contact_name"},
+				        {"contactTitle", "contact_title"},
+				        {"city", "city"},
+				        {"country", "country"}
+				    }),
+				    #"Trimmed Text" = Table.TransformColumns(#"Renamed Columns", {
+				        {"customer_id", Text.Trim, type text},
+				        {"company_name", Text.Trim, type text},
+				        {"contact_name", Text.Trim, type text},
+				        {"contact_title", Text.Trim, type text},
+				        {"city", Text.Trim, type text},
+				        {"country", Text.Trim, type text}
+				    }),
+				    #"Blanks To Null" = Table.ReplaceValue(#"Trimmed Text", "", null, Replacer.ReplaceValue, {
+				        "customer_id", "company_name", "contact_name", "contact_title", "city", "country"
+				    }),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Blanks To Null", {
+				        {"customer_id", type text},
+				        {"company_name", type text},
+				        {"contact_name", type text},
+				        {"contact_title", type text},
+				        {"city", type text},
+				        {"country", type text}
+				    }, "en-US")
+				in
+				    #"Changed Type"
+

@@ -1,0 +1,169 @@
+/// Continuous, gap-free date dimension covering the whole years spanned by 'Orders'[Order Date]:
+/// 2014-01-01 to 2017-12-31 (1,461 rows). Bounds are derived from the data, so the calendar
+/// re-fits automatically if the source file is extended.
+/// Marked as the model's date table (dataCategory: Time), which is what makes SAMEPERIODLASTYEAR
+/// and DATEADD resolve correctly in the time intelligence measures.
+table Dim_Date
+	lineageTag: 23b412ed-d103-44f7-80c8-9877c61908e5
+	dataCategory: Time
+
+	/// Day key, one row per calendar day. One-to-many to 'Orders'[Order Date] (active) and to
+	/// 'Orders'[Ship Date] (inactive).
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: yyyy-mm-dd
+		lineageTag: eab68333-7ab0-4338-ab85-b556b3670ca7
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	/// Calendar year, 2014-2017.
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: 0472fbca-8b39-42a6-864e-26f3788b0c3d
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = User
+
+	column 'Quarter Number'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: c732cc56-3d0d-4fe7-bcc3-84eef92e8507
+		summarizeBy: none
+		sourceColumn: Quarter Number
+
+		annotation SummarizationSetBy = User
+
+	/// Q1 - Q4. Sorted by [Quarter Number].
+	column Quarter
+		dataType: string
+		lineageTag: 4721b472-eb2e-4a6f-9a7c-9f76ac179dc4
+		summarizeBy: none
+		sourceColumn: Quarter
+		sortByColumn: 'Quarter Number'
+
+		annotation SummarizationSetBy = User
+
+	/// Month number 1-12. Sort-by column for [MonthName].
+	column Month
+		dataType: int64
+		formatString: 0
+		lineageTag: 57185f7a-d5f0-4932-8ac7-8b45806c3d6f
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = User
+
+	/// Full English month name, e.g. "January". Sorted by [Month] so it never lands in
+	/// alphabetical order.
+	column MonthName
+		dataType: string
+		lineageTag: af0b47b8-f729-407d-bce8-098cd5faaade
+		summarizeBy: none
+		sourceColumn: MonthName
+		sortByColumn: Month
+
+		annotation SummarizationSetBy = User
+
+	column 'Month Index'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5c76bea5-9d2c-458a-836a-e314b645438a
+		summarizeBy: none
+		sourceColumn: Month Index
+
+		annotation SummarizationSetBy = User
+
+	/// Sortable month label in YYYY-MM form, e.g. "2017-12". Sorted by [Month Index].
+	/// This is the text label for tables and matrices; the forecast chart uses [Month Start]
+	/// instead, because Power BI forecasting requires a real date axis (see README).
+	column Month-Year
+		dataType: string
+		lineageTag: 2d0aa59c-5587-4a10-9a05-588b59d7a00d
+		summarizeBy: none
+		sourceColumn: Month-Year
+		sortByColumn: 'Month Index'
+
+		annotation SummarizationSetBy = User
+
+	/// First day of the month as a true date. X-axis of the forecast line chart: a date-typed,
+	/// evenly spaced axis is what lets the Analytics pane forecast run at monthly granularity.
+	column 'Month Start'
+		dataType: dateTime
+		formatString: mmm yyyy
+		lineageTag: a3f1c080-2c0d-4340-b49c-c61d023fcef4
+		summarizeBy: none
+		sourceColumn: Month Start
+
+		annotation SummarizationSetBy = User
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'DayOfWeek Number'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4e3f1911-81b6-4e1f-a512-9aada341bad5
+		summarizeBy: none
+		sourceColumn: DayOfWeek Number
+
+		annotation SummarizationSetBy = User
+
+	/// Weekday name, Monday first. Sorted by [DayOfWeek Number].
+	column DayOfWeek
+		dataType: string
+		lineageTag: 43b1cadd-e12c-47bd-b8d8-dfaabf794e0b
+		summarizeBy: none
+		sourceColumn: DayOfWeek
+		sortByColumn: 'DayOfWeek Number'
+
+		annotation SummarizationSetBy = User
+
+	/// ISO-style week of year, weeks starting Monday.
+	column WeekNumber
+		dataType: int64
+		formatString: 0
+		lineageTag: a58301aa-ecdb-4416-ba86-5a6d7958c169
+		summarizeBy: none
+		sourceColumn: WeekNumber
+
+		annotation SummarizationSetBy = User
+
+	partition Dim_Date = m
+		mode: import
+		source =
+				let
+				    // Whole-year bounds taken from the fact table. Time intelligence needs complete
+				    // years on both ends, so the range is snapped out to Jan 1 / Dec 31.
+				    StartDate = Date.StartOfYear(List.Min(Orders[Order Date])),
+				    EndDate = Date.EndOfYear(List.Max(Orders[Order Date])),
+				    DayCount = Duration.Days(EndDate - StartDate) + 1,
+				    Dates = List.Dates(StartDate, DayCount, #duration(1, 0, 0, 0)),
+				    ToTable = Table.FromList(Dates, Splitter.SplitByNothing(), {"Date"}, null, ExtraValues.Error),
+				    // Every conversion below pins "en-US" so month and day names come out in English
+				    // regardless of the tr-TR sourceQueryCulture on the model.
+				    TypedDate = Table.TransformColumnTypes(ToTable, {{"Date", type date}}, "en-US"),
+				    AddYear = Table.AddColumn(TypedDate, "Year", each Date.Year([Date]), Int64.Type),
+				    AddQuarterNumber = Table.AddColumn(AddYear, "Quarter Number", each Date.QuarterOfYear([Date]), Int64.Type),
+				    AddQuarter = Table.AddColumn(AddQuarterNumber, "Quarter", each "Q" & Text.From([Quarter Number], "en-US"), type text),
+				    AddMonth = Table.AddColumn(AddQuarter, "Month", each Date.Month([Date]), Int64.Type),
+				    AddMonthName = Table.AddColumn(AddMonth, "MonthName", each Date.MonthName([Date], "en-US"), type text),
+				    AddMonthIndex = Table.AddColumn(AddMonthName, "Month Index", each [Year] * 100 + [Month], Int64.Type),
+				    AddMonthYear = Table.AddColumn(AddMonthIndex, "Month-Year", each Date.ToText([Date], [Format = "yyyy-MM", Culture = "en-US"]), type text),
+				    AddMonthStart = Table.AddColumn(AddMonthYear, "Month Start", each Date.StartOfMonth([Date]), type date),
+				    AddDayOfWeekNumber = Table.AddColumn(AddMonthStart, "DayOfWeek Number", each Date.DayOfWeek([Date], Day.Monday) + 1, Int64.Type),
+				    AddDayOfWeek = Table.AddColumn(AddDayOfWeekNumber, "DayOfWeek", each Date.DayOfWeekName([Date], "en-US"), type text),
+				    AddWeekNumber = Table.AddColumn(AddDayOfWeek, "WeekNumber", each Date.WeekOfYear([Date], Day.Monday), Int64.Type)
+				in
+				    AddWeekNumber
+
+	annotation PBI_ResultType = Table
+
